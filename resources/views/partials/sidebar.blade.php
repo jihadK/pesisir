@@ -87,7 +87,7 @@
                     </div>
                 </div>
 
-                <div data-kt-menu-trigger="click" class="menu-item menu-accordion">
+                <div data-kt-menu-trigger="click" class="menu-item menu-accordion {{ request()->routeIs('suppliers.*','customers.*') ? 'here show' : '' }}">
                     <span class="menu-link">
                         <span class="menu-icon"><i class="ki-outline ki-people fs-2"></i></span>
                         <span class="menu-title">Mitra</span>
@@ -95,13 +95,13 @@
                     </span>
                     <div class="menu-sub menu-sub-accordion menu-active-bg">
                         <div class="menu-item">
-                            <a class="menu-link" href="#">
+                            <a class="menu-link {{ request()->routeIs('suppliers.*') ? 'active' : '' }}" href="{{ route('suppliers.index') }}">
                                 <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
                                 <span class="menu-title">Supplier</span>
                             </a>
                         </div>
                         <div class="menu-item">
-                            <a class="menu-link" href="#">
+                            <a class="menu-link {{ request()->routeIs('customers.*') ? 'active' : '' }}" href="{{ route('customers.index') }}">
                                 <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
                                 <span class="menu-title">Customer</span>
                             </a>
@@ -110,7 +110,7 @@
                 </div>
 
                 <div class="menu-item">
-                    <a class="menu-link" href="#">
+                    <a class="menu-link {{ request()->routeIs('warehouses.*') ? 'active' : '' }}" href="{{ route('warehouses.index') }}">
                         <span class="menu-icon"><i class="ki-outline ki-home-2 fs-2"></i></span>
                         <span class="menu-title">Warehouse</span>
                     </a>
