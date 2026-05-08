@@ -1,9 +1,14 @@
 <?php
 
 use App\Http\Controllers\Web\Auth\LoginController;
+use App\Http\Controllers\Web\CategoryController;
 use App\Http\Controllers\Web\CustomerController;
 use App\Http\Controllers\Web\DashboardController;
+use App\Http\Controllers\Web\GradeController;
+use App\Http\Controllers\Web\PriceTierController;
+use App\Http\Controllers\Web\ProductController;
 use App\Http\Controllers\Web\SupplierController;
+use App\Http\Controllers\Web\UomController;
 use App\Http\Controllers\Web\WarehouseController;
 use Illuminate\Support\Facades\Route;
 
@@ -18,6 +23,103 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
     Route::get('/',          [DashboardController::class, 'index'])->name('home');
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // ========== MASTER DATA — Products ==========
+    Route::prefix('products')->name('products.')->group(function () {
+        // STATIC routes dulu sebelum {product} dynamic
+        Route::middleware('permission:products.view')->group(function () {
+            Route::get('/suggest-sku', [ProductController::class, 'suggestSku'])->name('suggest-sku');
+        });
+        Route::middleware('permission:products.create')->group(function () {
+            Route::get('/create', [ProductController::class, 'create'])->name('create');
+            Route::post('/',      [ProductController::class, 'store'])->name('store');
+        });
+        Route::middleware('permission:products.view')->group(function () {
+            Route::get('/',          [ProductController::class, 'index'])->name('index');
+            Route::get('/{product}', [ProductController::class, 'show'])->whereNumber('product')->name('show');
+        });
+        Route::middleware('permission:products.update')->group(function () {
+            Route::get('/{product}/edit', [ProductController::class, 'edit'])->whereNumber('product')->name('edit');
+            Route::put('/{product}',      [ProductController::class, 'update'])->whereNumber('product')->name('update');
+        });
+        Route::middleware('permission:products.delete')->group(function () {
+            Route::delete('/{product}',          [ProductController::class, 'destroy'])->whereNumber('product')->name('destroy');
+            Route::post('/{product}/restore',    [ProductController::class, 'restore'])->whereNumber('product')->name('restore');
+        });
+    });
+
+    // ========== MASTER DATA — Categories ==========
+    Route::prefix('categories')->name('categories.')->group(function () {
+        Route::middleware('permission:categories.create')->group(function () {
+            Route::get('/create', [CategoryController::class, 'create'])->name('create');
+            Route::post('/',      [CategoryController::class, 'store'])->name('store');
+        });
+        Route::middleware('permission:categories.view')->group(function () {
+            Route::get('/',     [CategoryController::class, 'index'])->name('index');
+            Route::get('/tree', [CategoryController::class, 'tree'])->name('tree');
+        });
+        Route::middleware('permission:categories.update')->group(function () {
+            Route::get('/{category}/edit', [CategoryController::class, 'edit'])->whereNumber('category')->name('edit');
+            Route::put('/{category}',      [CategoryController::class, 'update'])->whereNumber('category')->name('update');
+        });
+        Route::middleware('permission:categories.delete')->group(function () {
+            Route::delete('/{category}', [CategoryController::class, 'destroy'])->whereNumber('category')->name('destroy');
+        });
+    });
+
+    // ========== MASTER DATA — Units of Measure (UoM) ==========
+    Route::prefix('uoms')->name('uoms.')->group(function () {
+        Route::middleware('permission:uom.create')->group(function () {
+            Route::get('/create', [UomController::class, 'create'])->name('create');
+            Route::post('/',      [UomController::class, 'store'])->name('store');
+        });
+        Route::middleware('permission:uom.view')->group(function () {
+            Route::get('/', [UomController::class, 'index'])->name('index');
+        });
+        Route::middleware('permission:uom.update')->group(function () {
+            Route::get('/{uom}/edit', [UomController::class, 'edit'])->whereNumber('uom')->name('edit');
+            Route::put('/{uom}',      [UomController::class, 'update'])->whereNumber('uom')->name('update');
+        });
+        Route::middleware('permission:uom.delete')->group(function () {
+            Route::delete('/{uom}', [UomController::class, 'destroy'])->whereNumber('uom')->name('destroy');
+        });
+    });
+
+    // ========== MASTER DATA — Product Grades ==========
+    Route::prefix('grades')->name('grades.')->group(function () {
+        Route::middleware('permission:grades.create')->group(function () {
+            Route::get('/create', [GradeController::class, 'create'])->name('create');
+            Route::post('/',      [GradeController::class, 'store'])->name('store');
+        });
+        Route::middleware('permission:grades.view')->group(function () {
+            Route::get('/', [GradeController::class, 'index'])->name('index');
+        });
+        Route::middleware('permission:grades.update')->group(function () {
+            Route::get('/{grade}/edit', [GradeController::class, 'edit'])->whereNumber('grade')->name('edit');
+            Route::put('/{grade}',      [GradeController::class, 'update'])->whereNumber('grade')->name('update');
+        });
+        Route::middleware('permission:grades.delete')->group(function () {
+            Route::delete('/{grade}', [GradeController::class, 'destroy'])->whereNumber('grade')->name('destroy');
+        });
+    });
+
+    // ========== MASTER DATA — Price Tiers ==========
+    Route::prefix('price-tiers')->name('price_tiers.')->group(function () {
+        Route::middleware('permission:price_tiers.create')->group(function () {
+            Route::get('/create', [PriceTierController::class, 'create'])->name('create');
+            Route::post('/',      [PriceTierController::class, 'store'])->name('store');
+        });
+        Route::middleware('permission:price_tiers.view')->group(function () {
+            Route::get('/', [PriceTierController::class, 'index'])->name('index');
+        });
+        Route::middleware('permission:price_tiers.update')->group(function () {
+            Route::get('/{price_tier}/edit', [PriceTierController::class, 'edit'])->whereNumber('price_tier')->name('edit');
+            Route::put('/{price_tier}',      [PriceTierController::class, 'update'])->whereNumber('price_tier')->name('update');
+        });
+        Route::middleware('permission:price_tiers.delete')->group(function () {
+            Route::delete('/{price_tier}', [PriceTierController::class, 'destroy'])->whereNumber('price_tier')->name('destroy');
+        });
+    });
 
     // ========== MASTER DATA — Customers ==========
     Route::prefix('customers')->name('customers.')->group(function () {

@@ -55,7 +55,7 @@ class UpdateCustomerRequest extends FormRequest
 
     private function cleanRupiah(mixed $val): float
     {
-        if (is_numeric($val)) return (float) $val;
+        if ($val === null || $val === '') return 0.0;
         $cleaned = preg_replace('/[^0-9]/', '', (string) $val);
         return $cleaned === '' ? 0.0 : (float) $cleaned;
     }
