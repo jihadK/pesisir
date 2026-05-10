@@ -76,10 +76,14 @@ class ProductController extends Controller
 
     public function create(Request $request): View
     {
+        $defaultUomId = UnitOfMeasure::whereRaw('UPPER(code) = ?', ['PACK'])->value('id')
+            ?: UnitOfMeasure::whereRaw('UPPER(code) = ?', ['PCK'])->value('id');
+
         return view('products.create', [
             'product'    => new Product([
                 'is_active'     => true,
                 'is_perishable' => true,
+                'base_uom_id'   => $defaultUomId,
             ]),
             'categories' => $this->categoryService->flatTreeForDropdown(),
             'grades'     => ProductGrade::orderBy('code')->get(),
@@ -200,13 +204,18 @@ class ProductController extends Controller
     }
 
     /**
-     * JSON endpoint: suggest SKU dari kategori + grade.
+     * JSON endpoint: suggest SKU dari sub-kategori + grade.
+     * Format: {GROUP}-{SUBGROUP}-{GRADE}-{NNN} (mis. FISH-TUNA-A-001).
      */
     public function suggestSku(Request $request)
     {
         $categoryId = $request->integer('category_id') ?: null;
         $gradeId    = $request->integer('grade_id') ?: null;
-        $sku        = $this->service->suggestSku($categoryId, $gradeId);
-        return $this->ok(['sku' => $sku]);
+        try {
+            $sku = $this->service->suggestSku($categoryId, $gradeId);
+            return $this->ok(['sku' => $sku]);
+        } catch (\InvalidArgumentException $e) {
+            return $this->failBusinessRule($e->getMessage());
+        }
     }
 }

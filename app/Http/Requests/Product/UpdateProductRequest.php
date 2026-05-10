@@ -25,7 +25,7 @@ class UpdateProductRequest extends FormRequest
             'description'      => ['nullable', 'string'],
 
             'category_id'      => ['required', 'integer', Rule::exists('tbm_categories', 'id')],
-            'grade_id'         => ['nullable', 'integer', Rule::exists('tbm_product_grades', 'id')],
+            'grade_id'         => ['required', 'integer', Rule::exists('tbm_product_grades', 'id')],
             'base_uom_id'      => ['required', 'integer', Rule::exists('tbm_units_of_measure', 'id')],
 
             'storage_temp_min' => ['nullable', 'numeric', 'between:-50,50'],
@@ -36,13 +36,33 @@ class UpdateProductRequest extends FormRequest
             'min_stock_level'  => ['nullable', 'numeric', 'min:0'],
             'max_stock_level'  => ['nullable', 'numeric', 'min:0', 'gte:min_stock_level'],
 
-            'default_cost_price' => ['nullable', 'numeric', 'min:0'],
-            'default_sell_price' => ['nullable', 'numeric', 'min:0'],
+            'default_cost_price'     => ['nullable', 'numeric', 'min:0'],
+            'default_sell_price'     => ['nullable', 'numeric', 'min:0'],
+            'default_margin_percent' => ['nullable', 'numeric', 'min:0', 'max:9999.99'],
+
+            'pack_content_type'  => ['required', 'in:ekor,potong'],
+            'pack_content_min'   => ['required', 'integer', 'min:1', 'max:9999'],
+            'pack_content_max'   => ['required', 'integer', 'min:1', 'max:9999', 'gte:pack_content_min'],
+            'pack_weight_min_g'  => ['required', 'numeric', 'min:0.01', 'max:999999.99'],
+            'pack_weight_max_g'  => ['required', 'numeric', 'min:0.01', 'max:999999.99', 'gte:pack_weight_min_g'],
 
             'image'            => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'remove_image'     => ['nullable', 'boolean'],
             'is_active'        => ['nullable', 'boolean'],
         ];
+    }
+
+    public function withValidator(\Illuminate\Contracts\Validation\Validator $validator): void
+    {
+        $validator->after(function ($v) {
+            $catId = $this->input('category_id');
+            if ($catId) {
+                $cat = \App\Models\Category::find($catId);
+                if ($cat && ! $cat->parent_id) {
+                    $v->errors()->add('category_id', 'Pilih sub-kategori (level-2), bukan group root.');
+                }
+            }
+        });
     }
 
     public function messages(): array
@@ -54,6 +74,14 @@ class UpdateProductRequest extends FormRequest
             'base_uom_id.exists'         => 'Satuan yang dipilih tidak valid.',
             'storage_temp_max.gte'       => 'Suhu maksimum harus ≥ suhu minimum.',
             'max_stock_level.gte'        => 'Stock maksimum harus ≥ stock minimum.',
+            'pack_content_type.required' => 'Tipe isi pack (ekor/potong) wajib dipilih.',
+            'pack_content_type.in'       => 'Tipe isi harus "ekor" atau "potong".',
+            'pack_content_min.required'  => 'Jumlah isi minimum wajib diisi.',
+            'pack_content_max.required'  => 'Jumlah isi maksimum wajib diisi.',
+            'pack_content_max.gte'       => 'Isi maksimum harus ≥ isi minimum.',
+            'pack_weight_min_g.required' => 'Berat minimum (gram) wajib diisi.',
+            'pack_weight_max_g.required' => 'Berat maksimum (gram) wajib diisi.',
+            'pack_weight_max_g.gte'      => 'Berat maksimum harus ≥ berat minimum.',
             'image.image'                => 'File harus berupa gambar.',
             'image.mimes'                => 'Format gambar harus JPG/PNG/WebP.',
             'image.max'                  => 'Ukuran gambar maksimal 2 MB.',

@@ -20,7 +20,9 @@ class Product extends BaseModel
         'name', 'scientific_name', 'origin', 'description',
         'storage_temp_min', 'storage_temp_max', 'shelf_life_days', 'is_perishable',
         'min_stock_level', 'max_stock_level',
-        'default_cost_price', 'default_sell_price',
+        'default_cost_price', 'default_sell_price', 'default_margin_percent',
+        'pack_content_type', 'pack_content_min', 'pack_content_max',
+        'pack_weight_min_g', 'pack_weight_max_g',
         'image_url', 'is_active', 'created_by',
     ];
 
@@ -32,8 +34,13 @@ class Product extends BaseModel
         'shelf_life_days'    => 'integer',
         'min_stock_level'    => 'decimal:3',
         'max_stock_level'    => 'decimal:3',
-        'default_cost_price' => 'decimal:2',
-        'default_sell_price' => 'decimal:2',
+        'default_cost_price'     => 'decimal:2',
+        'default_sell_price'     => 'decimal:2',
+        'default_margin_percent' => 'decimal:2',
+        'pack_content_min'   => 'integer',
+        'pack_content_max'   => 'integer',
+        'pack_weight_min_g'  => 'decimal:2',
+        'pack_weight_max_g'  => 'decimal:2',
     ];
 
     /* ========== Relations ========== */
@@ -134,5 +141,26 @@ class Product extends BaseModel
         $sell = (float) $this->default_sell_price;
         if ($cost <= 0) return null;
         return round((($sell - $cost) / $cost) * 100, 1);
+    }
+
+    /** Label pack content per pack: "4–5 potong" / "5 ekor" */
+    public function getPackContentLabelAttribute(): ?string
+    {
+        $type = $this->pack_content_type;
+        $min  = $this->pack_content_min;
+        $max  = $this->pack_content_max;
+        if (! $type || ! $min) return null;
+        return $min == $max ? "{$min} {$type}" : "{$min}–{$max} {$type}";
+    }
+
+    /** Label berat per pack: "200–215 g" / "450 g" */
+    public function getPackWeightLabelAttribute(): ?string
+    {
+        $min = $this->pack_weight_min_g;
+        $max = $this->pack_weight_max_g;
+        if ($min === null) return null;
+        $minS = rtrim(rtrim(number_format((float)$min, 2, '.', ''), '0'), '.');
+        $maxS = rtrim(rtrim(number_format((float)$max, 2, '.', ''), '0'), '.');
+        return $minS == $maxS ? "{$minS} g" : "{$minS}–{$maxS} g";
     }
 }

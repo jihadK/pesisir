@@ -167,41 +167,47 @@
                     </div>
                 </div>
 
-                <div data-kt-menu-trigger="click" class="menu-item menu-accordion">
+                <div data-kt-menu-trigger="click" class="menu-item menu-accordion {{ request()->routeIs('stock_openings.*','stock_adjustments.*','stock_cards.*') ? 'here show' : '' }}">
                     <span class="menu-link">
                         <span class="menu-icon"><i class="ki-outline ki-parcel fs-2"></i></span>
                         <span class="menu-title">Stock</span>
                         <span class="menu-arrow"></span>
                     </span>
                     <div class="menu-sub menu-sub-accordion menu-active-bg">
+                        @if(auth()->user()?->hasPermission('stock_opening.view'))
+                        <div class="menu-item">
+                            <a class="menu-link {{ request()->routeIs('stock_openings.*') ? 'active' : '' }}" href="{{ route('stock_openings.index') }}">
+                                <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
+                                <span class="menu-title">Stock Opening</span>
+                            </a>
+                        </div>
+                        @endif
+                        @if(auth()->user()?->hasPermission('stock_adjustment.view'))
+                        <div class="menu-item">
+                            <a class="menu-link {{ request()->routeIs('stock_adjustments.*') ? 'active' : '' }}" href="{{ route('stock_adjustments.index') }}">
+                                <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
+                                <span class="menu-title">Stock Adjustment</span>
+                            </a>
+                        </div>
+                        @endif
+                        @if(auth()->user()?->hasPermission('stock_card.view'))
+                        <div class="menu-item">
+                            <a class="menu-link {{ request()->routeIs('stock_cards.*') ? 'active' : '' }}" href="{{ route('stock_cards.index') }}">
+                                <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
+                                <span class="menu-title">Kartu Stok</span>
+                            </a>
+                        </div>
+                        @endif
                         <div class="menu-item">
                             <a class="menu-link" href="#">
                                 <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
-                                <span class="menu-title">Saldo Stock</span>
+                                <span class="menu-title text-muted">Mutasi Gudang <span class="badge badge-light-secondary fs-9 ms-1">soon</span></span>
                             </a>
                         </div>
                         <div class="menu-item">
                             <a class="menu-link" href="#">
                                 <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
-                                <span class="menu-title">Kartu Stock</span>
-                            </a>
-                        </div>
-                        <div class="menu-item">
-                            <a class="menu-link" href="#">
-                                <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
-                                <span class="menu-title">Batch / Lot</span>
-                            </a>
-                        </div>
-                        <div class="menu-item">
-                            <a class="menu-link" href="#">
-                                <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
-                                <span class="menu-title">Mutasi Gudang</span>
-                            </a>
-                        </div>
-                        <div class="menu-item">
-                            <a class="menu-link" href="#">
-                                <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
-                                <span class="menu-title">Stock Opname</span>
+                                <span class="menu-title text-muted">Stock Opname <span class="badge badge-light-secondary fs-9 ms-1">soon</span></span>
                             </a>
                         </div>
                     </div>

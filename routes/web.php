@@ -7,6 +7,9 @@ use App\Http\Controllers\Web\DashboardController;
 use App\Http\Controllers\Web\GradeController;
 use App\Http\Controllers\Web\PriceTierController;
 use App\Http\Controllers\Web\ProductController;
+use App\Http\Controllers\Web\StockAdjustmentController;
+use App\Http\Controllers\Web\StockCardController;
+use App\Http\Controllers\Web\StockOpeningController;
 use App\Http\Controllers\Web\SupplierController;
 use App\Http\Controllers\Web\UomController;
 use App\Http\Controllers\Web\WarehouseController;
@@ -159,6 +162,39 @@ Route::middleware('auth')->group(function () {
             Route::delete('/{supplier}',          [SupplierController::class, 'destroy'])->whereNumber('supplier')->name('destroy');
             Route::post('/{supplier}/restore',    [SupplierController::class, 'restore'])->whereNumber('supplier')->name('restore');
         });
+    });
+
+    // ========== INVENTORY — Stock Opening ==========
+    Route::prefix('stock-openings')->name('stock_openings.')->group(function () {
+        Route::middleware('permission:stock_opening.create')->group(function () {
+            Route::get('/create', [StockOpeningController::class, 'create'])->name('create');
+            Route::post('/',      [StockOpeningController::class, 'store'])->name('store');
+        });
+        Route::middleware('permission:stock_opening.view')->group(function () {
+            Route::get('/',                [StockOpeningController::class, 'index'])->name('index');
+            Route::get('/{stockOpening}',  [StockOpeningController::class, 'show'])->whereNumber('stockOpening')->name('show');
+        });
+    });
+
+    // ========== INVENTORY — Stock Adjustment ==========
+    Route::prefix('stock-adjustments')->name('stock_adjustments.')->group(function () {
+        Route::middleware('permission:stock_adjustment.view')->group(function () {
+            Route::get('/batches', [StockAdjustmentController::class, 'batches'])->name('batches');
+        });
+        Route::middleware('permission:stock_adjustment.create')->group(function () {
+            Route::get('/create', [StockAdjustmentController::class, 'create'])->name('create');
+            Route::post('/',      [StockAdjustmentController::class, 'store'])->name('store');
+        });
+        Route::middleware('permission:stock_adjustment.view')->group(function () {
+            Route::get('/',                  [StockAdjustmentController::class, 'index'])->name('index');
+            Route::get('/{stockAdjustment}', [StockAdjustmentController::class, 'show'])->whereNumber('stockAdjustment')->name('show');
+        });
+    });
+
+    // ========== INVENTORY — Stock Card (Kartu Stok) ==========
+    Route::prefix('stock-cards')->name('stock_cards.')->middleware('permission:stock_card.view')->group(function () {
+        Route::get('/',             [StockCardController::class, 'index'])->name('index');
+        Route::get('/{stockCard}',  [StockCardController::class, 'show'])->whereNumber('stockCard')->name('show');
     });
 
     // ========== MASTER DATA — Warehouses ==========

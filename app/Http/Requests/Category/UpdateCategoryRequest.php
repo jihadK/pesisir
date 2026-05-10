@@ -20,6 +20,7 @@ class UpdateCategoryRequest extends FormRequest
 
         return [
             'name'        => ['required', 'string', 'max:100'],
+            'code'        => ['required', 'string', 'max:10', 'regex:/^[A-Z0-9]+$/'],
             'slug'        => ['nullable', 'string', 'max:100', 'regex:/^[a-z0-9-]+$/', Rule::unique('tbm_categories', 'slug')->ignore($catId)],
             'parent_id'   => ['nullable', 'integer', Rule::exists('tbm_categories', 'id')],
             'description' => ['nullable', 'string'],
@@ -29,6 +30,8 @@ class UpdateCategoryRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'code.required' => 'Kode kategori wajib diisi (dipakai untuk SKU produk).',
+            'code.regex'    => 'Kode hanya boleh huruf kapital & angka (mis. FISH, TUNA).',
             'slug.regex'  => 'Slug hanya boleh huruf kecil, angka, dan tanda hubung.',
             'slug.unique' => 'Slug sudah dipakai kategori lain.',
             'parent_id.exists' => 'Kategori induk tidak valid.',
@@ -46,6 +49,7 @@ class UpdateCategoryRequest extends FormRequest
         }
 
         $this->merge([
+            'code'      => strtoupper(trim((string) $this->input('code'))) ?: null,
             'slug'      => $slug ?: null,
             'parent_id' => $this->input('parent_id') ?: null,
         ]);

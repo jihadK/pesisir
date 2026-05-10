@@ -19,6 +19,18 @@
                 </div>
 
                 <div class="row mb-5">
+                    <label class="col-form-label col-md-3 fw-semibold required">Kode</label>
+                    <div class="col-md-9">
+                        <input type="text" name="code" id="cat_code"
+                               value="{{ old('code', $category->code) }}"
+                               class="form-control form-control-solid text-uppercase @error('code') is-invalid @enderror"
+                               placeholder="FISH / TUNA" maxlength="10" required style="text-transform:uppercase" />
+                        @error('code')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        <div class="form-text">Huruf kapital &amp; angka. Dipakai sebagai segmen SKU produk (mis. <code>FISH-TUNA-A-001</code>).</div>
+                    </div>
+                </div>
+
+                <div class="row mb-5">
                     <label class="col-form-label col-md-3 fw-semibold">Slug</label>
                     <div class="col-md-9">
                         <input type="text" name="slug" id="cat_slug"
@@ -126,6 +138,19 @@ document.addEventListener('DOMContentLoaded', function () {
         if (! manuallyEdited) slugEl.value = slugify(this.value);
     });
     slugEl.addEventListener('input', function () { manuallyEdited = !! this.value; });
+
+    // Auto-fill code dari 4 huruf pertama nama (kalau code kosong)
+    var codeEl = document.getElementById('cat_code');
+    var codeManual = !! codeEl.value;
+    nameEl.addEventListener('input', function () {
+        if (! codeManual) {
+            codeEl.value = (this.value || '').replace(/[^A-Za-z]/g, '').substring(0, 4).toUpperCase();
+        }
+    });
+    codeEl.addEventListener('input', function () {
+        this.value = this.value.toUpperCase();
+        codeManual = !! this.value;
+    });
 });
 </script>
 @endpush

@@ -15,7 +15,7 @@ class Category extends BaseModel
     /** Tabel ini di DDL hanya punya created_date — tidak ada updated_date */
     public $timestamps = false;
 
-    protected $fillable = ['parent_id', 'name', 'slug', 'description'];
+    protected $fillable = ['parent_id', 'code', 'name', 'slug', 'description'];
 
     protected $casts = ['created_date' => 'datetime'];
 
@@ -47,6 +47,7 @@ class Category extends BaseModel
         if (! $term) return $q;
         return $q->where(function ($qq) use ($term) {
             $qq->where('name', 'ilike', "%$term%")
+               ->orWhere('code', 'ilike', "%$term%")
                ->orWhere('slug', 'ilike', "%$term%")
                ->orWhere('description', 'ilike', "%$term%");
         });

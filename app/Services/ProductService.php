@@ -13,25 +13,56 @@ use Illuminate\Support\Str;
 class ProductService
 {
     /**
-     * Generate suggested SKU dari kategori + grade + running number.
-     * Format: FISH-{CATEGORY-SLUG}-{GRADE-CODE}-{NNN}
-     * Mis. FISH-IKAN-LAUT-A-001
+     * Generate SKU dari subgroup-category + grade.
+     * Format: {GROUP_CODE}-{SUBGROUP_CODE}-{GRADE_CODE}-{NNN}
+     * Contoh: FISH-TUNA-A-001
+     *
+     * Aturan:
+     *  - $categoryId WAJIB merujuk ke kategori level-2 (punya parent_id)
+     *  - $gradeId WAJIB
+     *  - Sequence (NNN) reset per kombinasi group+subgroup+grade
+     *
+     * Throw InvalidArgumentException kalau prasyarat tidak terpenuhi.
      */
     public function suggestSku(?int $categoryId = null, ?int $gradeId = null): string
     {
-        $catSlug = 'PROD';
-        if ($categoryId && ($cat = Category::find($categoryId))) {
-            $catSlug = strtoupper(str_replace('-', '', Str::limit(Str::slug($cat->name), 8, '')));
+        if (! $categoryId) {
+            throw new \InvalidArgumentException('Kategori wajib dipilih untuk generate SKU.');
+        }
+        if (! $gradeId) {
+            throw new \InvalidArgumentException('Grade wajib dipilih untuk generate SKU.');
         }
 
-        $gradeCode = '';
-        if ($gradeId && ($g = ProductGrade::find($gradeId))) {
-            $gradeCode = '-' . strtoupper($g->code);
+        $sub = Category::find($categoryId);
+        if (! $sub) {
+            throw new \InvalidArgumentException('Kategori tidak ditemukan.');
+        }
+        if (! $sub->parent_id) {
+            throw new \InvalidArgumentException('Kategori yang dipilih harus berupa sub-kategori (level-2). Pilih sub-kategori, bukan group root.');
         }
 
-        $prefix = "FISH-{$catSlug}{$gradeCode}";
+        $group = Category::find($sub->parent_id);
+        if (! $group) {
+            throw new \InvalidArgumentException('Group kategori induk tidak ditemukan.');
+        }
 
-        // Cari running number berikutnya
+        $grade = ProductGrade::find($gradeId);
+        if (! $grade) {
+            throw new \InvalidArgumentException('Grade tidak ditemukan.');
+        }
+
+        $groupCode = strtoupper(trim((string) $group->code));
+        $subCode   = strtoupper(trim((string) $sub->code));
+        $gradeCode = strtoupper(trim((string) $grade->code));
+
+        if ($groupCode === '' || $subCode === '') {
+            throw new \InvalidArgumentException('Kategori (group/sub) belum punya kode. Set kode di menu Kategori.');
+        }
+
+        $prefix = "{$groupCode}-{$subCode}-{$gradeCode}";
+
+        // Sequence reset per kombinasi group+subgroup+grade.
+        // Cari MAX numeric tail dari produk yang punya prefix sama.
         $lastSku = DB::table('tbm_products')
             ->where('sku', 'ilike', $prefix . '-%')
             ->orderByDesc('sku')
