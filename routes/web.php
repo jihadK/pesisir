@@ -5,8 +5,10 @@ use App\Http\Controllers\Web\CategoryController;
 use App\Http\Controllers\Web\CustomerController;
 use App\Http\Controllers\Web\DashboardController;
 use App\Http\Controllers\Web\GradeController;
+use App\Http\Controllers\Web\PaymentMethodController;
 use App\Http\Controllers\Web\PriceTierController;
 use App\Http\Controllers\Web\ProductController;
+use App\Http\Controllers\Web\SalesOrderController;
 use App\Http\Controllers\Web\StockAdjustmentController;
 use App\Http\Controllers\Web\StockCardController;
 use App\Http\Controllers\Web\StockOpeningController;
@@ -161,6 +163,53 @@ Route::middleware('auth')->group(function () {
         Route::middleware('permission:suppliers.delete')->group(function () {
             Route::delete('/{supplier}',          [SupplierController::class, 'destroy'])->whereNumber('supplier')->name('destroy');
             Route::post('/{supplier}/restore',    [SupplierController::class, 'restore'])->whereNumber('supplier')->name('restore');
+        });
+    });
+
+    // ========== MASTER — Payment Method ==========
+    Route::prefix('payment-methods')->name('payment_methods.')->group(function () {
+        Route::middleware('permission:payment_method.create')->group(function () {
+            Route::get('/create', [PaymentMethodController::class, 'create'])->name('create');
+            Route::post('/',      [PaymentMethodController::class, 'store'])->name('store');
+        });
+        Route::middleware('permission:payment_method.view')->group(function () {
+            Route::get('/', [PaymentMethodController::class, 'index'])->name('index');
+        });
+        Route::middleware('permission:payment_method.update')->group(function () {
+            Route::get('/{payment_method}/edit', [PaymentMethodController::class, 'edit'])->whereNumber('payment_method')->name('edit');
+            Route::put('/{payment_method}',      [PaymentMethodController::class, 'update'])->whereNumber('payment_method')->name('update');
+        });
+        Route::middleware('permission:payment_method.delete')->group(function () {
+            Route::delete('/{payment_method}', [PaymentMethodController::class, 'destroy'])->whereNumber('payment_method')->name('destroy');
+        });
+    });
+
+    // ========== SALES — Sales Order ==========
+    Route::prefix('sales-orders')->name('sales_orders.')->group(function () {
+        Route::middleware('permission:sales_order.view')->group(function () {
+            Route::get('/available-stock', [SalesOrderController::class, 'availableStock'])->name('available-stock');
+        });
+        Route::middleware('permission:sales_order.create')->group(function () {
+            Route::get('/create', [SalesOrderController::class, 'create'])->name('create');
+            Route::post('/',      [SalesOrderController::class, 'store'])->name('store');
+        });
+        Route::middleware('permission:sales_order.view')->group(function () {
+            Route::get('/',                    [SalesOrderController::class, 'index'])->name('index');
+            Route::get('/{salesOrder}',        [SalesOrderController::class, 'show'])->whereNumber('salesOrder')->name('show');
+        });
+        Route::middleware('permission:sales_order.print')->group(function () {
+            Route::get('/{salesOrder}/print',  [SalesOrderController::class, 'print'])->whereNumber('salesOrder')->name('print');
+        });
+        Route::middleware('permission:sales_order.update')->group(function () {
+            Route::get('/{salesOrder}/edit',                [SalesOrderController::class, 'edit'])->whereNumber('salesOrder')->name('edit');
+            Route::put('/{salesOrder}',                     [SalesOrderController::class, 'update'])->whereNumber('salesOrder')->name('update');
+            Route::patch('/{salesOrder}/payment-method',    [SalesOrderController::class, 'updatePaymentMethod'])->whereNumber('salesOrder')->name('payment-method.update');
+        });
+        Route::middleware('permission:sales_order.confirm')->group(function () {
+            Route::post('/{salesOrder}/confirm', [SalesOrderController::class, 'confirm'])->whereNumber('salesOrder')->name('confirm');
+        });
+        Route::middleware('permission:sales_order.cancel')->group(function () {
+            Route::post('/{salesOrder}/cancel',  [SalesOrderController::class, 'cancel'])->whereNumber('salesOrder')->name('cancel');
         });
     });
 

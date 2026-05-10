@@ -116,7 +116,7 @@
                     </a>
                 </div>
 
-                <div data-kt-menu-trigger="click" class="menu-item menu-accordion">
+                <div data-kt-menu-trigger="click" class="menu-item menu-accordion {{ request()->routeIs('payment_methods.*') ? 'here show' : '' }}">
                     <span class="menu-link">
                         <span class="menu-icon"><i class="ki-outline ki-setting-3 fs-2"></i></span>
                         <span class="menu-title">Konfigurasi</span>
@@ -126,15 +126,17 @@
                         <div class="menu-item">
                             <a class="menu-link" href="#">
                                 <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
-                                <span class="menu-title">Pajak</span>
+                                <span class="menu-title text-muted">Pajak <span class="badge badge-light-secondary fs-9 ms-1">soon</span></span>
                             </a>
                         </div>
+                        @if(auth()->user()?->hasPermission('payment_method.view'))
                         <div class="menu-item">
-                            <a class="menu-link" href="#">
+                            <a class="menu-link {{ request()->routeIs('payment_methods.*') ? 'active' : '' }}" href="{{ route('payment_methods.index') }}">
                                 <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
                                 <span class="menu-title">Metode Pembayaran</span>
                             </a>
                         </div>
+                        @endif
                     </div>
                 </div>
 
@@ -220,29 +222,31 @@
                     </div>
                 </div>
 
-                <div data-kt-menu-trigger="click" class="menu-item menu-accordion">
+                <div data-kt-menu-trigger="click" class="menu-item menu-accordion {{ request()->routeIs('sales_orders.*') ? 'here show' : '' }}">
                     <span class="menu-link">
                         <span class="menu-icon"><i class="ki-outline ki-basket fs-2"></i></span>
                         <span class="menu-title">Sales</span>
                         <span class="menu-arrow"></span>
                     </span>
                     <div class="menu-sub menu-sub-accordion menu-active-bg">
+                        @if(auth()->user()?->hasPermission('sales_order.view'))
                         <div class="menu-item">
-                            <a class="menu-link" href="#">
+                            <a class="menu-link {{ request()->routeIs('sales_orders.*') ? 'active' : '' }}" href="{{ route('sales_orders.index') }}">
                                 <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
                                 <span class="menu-title">Sales Order</span>
                             </a>
                         </div>
+                        @endif
                         <div class="menu-item">
                             <a class="menu-link" href="#">
                                 <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
-                                <span class="menu-title">Delivery Order</span>
+                                <span class="menu-title text-muted">Delivery Order <span class="badge badge-light-secondary fs-9 ms-1">soon</span></span>
                             </a>
                         </div>
                         <div class="menu-item">
                             <a class="menu-link" href="#">
                                 <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
-                                <span class="menu-title">Retur Penjualan</span>
+                                <span class="menu-title text-muted">Retur Penjualan <span class="badge badge-light-secondary fs-9 ms-1">soon</span></span>
                             </a>
                         </div>
                     </div>
