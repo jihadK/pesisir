@@ -55,42 +55,86 @@
             <div class="card-header"><h3 class="card-title">Items</h3></div>
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-row-bordered align-middle gy-2">
+                    <table class="table table-row-bordered align-middle gy-2" style="min-width:760px">
                         <thead>
                             <tr class="fw-bold text-muted bg-light fs-7">
-                                <th class="ps-4">Produk</th>
-                                <th class="text-end">Qty</th>
-                                <th class="text-end">Harga</th>
-                                <th class="text-end">Disc%</th>
-                                <th class="text-end pe-4">Subtotal</th>
+                                <th class="ps-4" style="min-width:240px">Produk</th>
+                                <th class="text-end" style="min-width:110px">Qty</th>
+                                <th class="text-end" style="min-width:120px">Harga</th>
+                                <th class="text-end" style="min-width:70px">Disc%</th>
+                                <th class="text-end pe-4" style="min-width:140px">Subtotal</th>
                             </tr>
                         </thead>
                         <tbody>
+                        @php
+                            $totalContentMin = 0; $totalContentMax = 0; $totalWeightMin = 0; $totalWeightMax = 0; $sameUnit = null;
+                        @endphp
                         @foreach($so->items as $item)
-                            @php $q = (float)$item->quantity; $qF = floor($q)==$q ? number_format($q,0,',','.') : number_format($q,3,',','.'); @endphp
+                            @php
+                                $q = (float)$item->quantity;
+                                $qF = floor($q)==$q ? number_format($q,0,',','.') : number_format($q,3,',','.');
+                                $p = $item->product;
+                                if ($p->pack_content_min) {
+                                    $totalContentMin += $q * (int)$p->pack_content_min;
+                                    $totalContentMax += $q * (int)($p->pack_content_max ?: $p->pack_content_min);
+                                    $sameUnit = $sameUnit === null ? $p->pack_content_type : ($sameUnit === $p->pack_content_type ? $sameUnit : false);
+                                }
+                                if ($p->pack_weight_min_g) {
+                                    $totalWeightMin += $q * (float)$p->pack_weight_min_g;
+                                    $totalWeightMax += $q * (float)($p->pack_weight_max_g ?: $p->pack_weight_min_g);
+                                }
+                            @endphp
                             <tr>
                                 <td class="ps-4">
-                                    <div class="fw-bold">{{ $item->product->sku }}</div>
-                                    <div class="text-muted fs-7">{{ $item->product->name }}</div>
+                                    <div class="fw-bold">{{ $p->sku }}</div>
+                                    <div class="text-muted fs-7">{{ $p->name }}</div>
+                                    @if($p->pack_content_label || $p->pack_weight_label)
+                                        <div class="fs-8 mt-1">
+                                            @if($p->pack_content_label)<span class="badge badge-light-info me-1">{{ $p->pack_content_label }}</span>@endif
+                                            @if($p->pack_weight_label)<span class="badge badge-light-warning">{{ $p->pack_weight_label }}</span>@endif
+                                        </div>
+                                    @endif
                                 </td>
                                 <td class="text-end fw-bold">{{ $qF }} <span class="text-muted fs-8">{{ $item->uom->code }}</span></td>
-                                <td class="text-end">Rp {{ number_format((float)$item->unit_price, 0, ',', '.') }}</td>
+                                <td class="text-end">{{ number_format((float)$item->unit_price, 0, ',', '.') }}</td>
                                 <td class="text-end">{{ rtrim(rtrim(number_format((float)$item->discount_pct, 2, ',', '.'), '0'), ',') }}%</td>
-                                <td class="text-end pe-4 fw-bold">Rp {{ number_format((float)$item->subtotal, 0, ',', '.') }}</td>
+                                <td class="text-end pe-4 fw-bold">{{ number_format((float)$item->subtotal, 0, ',', '.') }}</td>
                             </tr>
                         @endforeach
                         </tbody>
                         <tfoot class="fw-bold">
-                            <tr><td colspan="4" class="text-end">Subtotal</td><td class="text-end pe-4">Rp {{ number_format((float)$so->subtotal, 0, ',', '.') }}</td></tr>
+                            @if($totalContentMin > 0 || $totalWeightMin > 0)
+                                <tr class="fs-8">
+                                    <td colspan="5" class="ps-4 pe-4 py-2 bg-light-info">
+                                        <i class="ki-outline ki-element-equal-1 fs-3 me-1 text-info"></i>
+                                        <strong>Estimasi total:</strong>
+                                        @if($totalContentMin > 0)
+                                            {{ $totalContentMin == $totalContentMax ? number_format($totalContentMin,0,',','.') : number_format($totalContentMin,0,',','.').'–'.number_format($totalContentMax,0,',','.') }}
+                                            {{ $sameUnit ?: 'isi' }}
+                                        @endif
+                                        @if($totalContentMin > 0 && $totalWeightMin > 0) · @endif
+                                        @if($totalWeightMin > 0)
+                                            @php $kgMin = $totalWeightMin/1000; $kgMax = $totalWeightMax/1000; @endphp
+                                            {{ $totalWeightMin == $totalWeightMax ? number_format($totalWeightMin,0,',','.') : number_format($totalWeightMin,0,',','.').'–'.number_format($totalWeightMax,0,',','.') }} g
+                                            <span class="text-muted">({{ rtrim(rtrim(number_format($kgMin,3,',','.'),'0'),',') }}{{ $kgMin != $kgMax ? '–'.rtrim(rtrim(number_format($kgMax,3,',','.'),'0'),',') : '' }} kg)</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endif
+                            <tr><td colspan="4" class="text-end">Subtotal</td><td class="text-end pe-4">{{ number_format((float)$so->subtotal, 0, ',', '.') }}</td></tr>
                             @if((float)$so->discount_amount > 0)
-                                <tr><td colspan="4" class="text-end">Diskon</td><td class="text-end pe-4 text-danger">−Rp {{ number_format((float)$so->discount_amount, 0, ',', '.') }}</td></tr>
+                                <tr><td colspan="4" class="text-end">Diskon</td><td class="text-end pe-4 text-danger">−{{ number_format((float)$so->discount_amount, 0, ',', '.') }}</td></tr>
                             @endif
                             @if((float)$so->shipping_cost > 0)
-                                <tr><td colspan="4" class="text-end">Ongkir</td><td class="text-end pe-4">Rp {{ number_format((float)$so->shipping_cost, 0, ',', '.') }}</td></tr>
+                                <tr><td colspan="4" class="text-end">Ongkir</td><td class="text-end pe-4">{{ number_format((float)$so->shipping_cost, 0, ',', '.') }}</td></tr>
                             @endif
                             <tr><td colspan="4" class="text-end fs-4">TOTAL</td><td class="text-end pe-4 fs-4 text-primary">Rp {{ number_format((float)$so->total_amount, 0, ',', '.') }}</td></tr>
                         </tfoot>
                     </table>
+                </div>
+                <div class="d-md-none alert alert-light-info mt-3 fs-8 py-2 mb-0">
+                    <i class="ki-outline ki-information fs-3 me-1"></i>
+                    Tabel bisa di-<strong>geser ke samping</strong> untuk lihat semua kolom.
                 </div>
             </div>
         </div>

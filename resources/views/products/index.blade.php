@@ -126,6 +126,12 @@
                         <td>
                             <a href="{{ route('products.show', $p) }}" class="text-gray-900 text-hover-primary fw-bold">{{ $p->name }}</a>
                             @if($p->scientific_name)<div class="text-muted fs-8 fst-italic">{{ $p->scientific_name }}</div>@endif
+                            @if($p->pack_content_label || $p->pack_weight_label)
+                                <div class="fs-8 mt-1">
+                                    @if($p->pack_content_label)<span class="badge badge-light-info me-1">{{ $p->pack_content_label }}</span>@endif
+                                    @if($p->pack_weight_label)<span class="badge badge-light-warning">{{ $p->pack_weight_label }}</span>@endif
+                                </div>
+                            @endif
                         </td>
                         <td>{{ $p->category?->name ?? '—' }}</td>
                         <td>
@@ -135,14 +141,18 @@
                                 <span class="text-muted">—</span>
                             @endif
                         </td>
+                        @php
+                            $ts = (float) $p->total_stock;
+                            $tsFmt = floor($ts) == $ts ? number_format($ts, 0, ',', '.') : number_format($ts, 3, ',', '.');
+                        @endphp
                         <td class="text-end fw-bold {{ $p->is_stock_low ? 'text-danger' : '' }}">
-                            {{ number_format($p->total_stock, 3) }}
+                            {{ $tsFmt }}
                             @if($p->is_stock_low)<i class="ki-outline ki-warning fs-3 text-danger ms-1" title="Stock di bawah minimum"></i>@endif
                         </td>
                         <td><span class="badge badge-light">{{ $p->baseUom?->code ?? '—' }}</span></td>
-                        <td class="text-end">
+                        <td class="text-end fw-bold">
                             @if($p->default_sell_price > 0)
-                                Rp {{ number_format($p->default_sell_price, 0, ',', '.') }}
+                                {{ number_format($p->default_sell_price, 0, ',', '.') }}
                             @else
                                 <span class="text-muted">—</span>
                             @endif

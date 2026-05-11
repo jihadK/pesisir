@@ -31,8 +31,8 @@ class StoreProductRequest extends FormRequest
             'shelf_life_days'  => ['nullable', 'integer', 'min:0', 'max:3650'],
             'is_perishable'    => ['nullable', 'boolean'],
 
-            'min_stock_level'  => ['nullable', 'numeric', 'min:0'],
-            'max_stock_level'  => ['nullable', 'numeric', 'min:0', 'gte:min_stock_level'],
+            'min_stock_level'  => ['nullable', 'integer', 'min:0'],
+            'max_stock_level'  => ['nullable', 'integer', 'min:0', 'gte:min_stock_level'],
 
             'default_cost_price'     => ['nullable', 'numeric', 'min:0'],
             'default_sell_price'     => ['nullable', 'numeric', 'min:0'],

@@ -66,12 +66,10 @@
                     <tr class="fw-bold text-muted bg-light">
                         <th class="ps-4">Tanggal</th>
                         <th>No. Dokumen</th>
-                        <th>Warehouse</th>
                         <th>Produk</th>
                         <th>Batch</th>
                         <th class="text-end">Qty</th>
-                        <th class="text-end">Cost</th>
-                        <th>Oleh</th>
+                        <th class="text-end pe-4">Cost</th>
                         <th class="text-end pe-4">Aksi</th>
                     </tr>
                 </thead>
@@ -80,10 +78,15 @@
                         <tr>
                             <td class="ps-4">{{ $m->created_date?->format('d M Y H:i') }}</td>
                             <td><span class="fw-bold text-primary">{{ $m->movement_number }}</span></td>
-                            <td>{{ $m->warehouse->code }} — {{ $m->warehouse->name }}</td>
                             <td>
                                 <div class="fw-bold">{{ $m->product->sku }}</div>
                                 <div class="text-muted fs-7">{{ $m->product->name }}</div>
+                                @if($m->product->pack_content_label || $m->product->pack_weight_label)
+                                    <div class="fs-8 mt-1">
+                                        @if($m->product->pack_content_label)<span class="badge badge-light-info me-1">{{ $m->product->pack_content_label }}</span>@endif
+                                        @if($m->product->pack_weight_label)<span class="badge badge-light-warning">{{ $m->product->pack_weight_label }}</span>@endif
+                                    </div>
+                                @endif
                             </td>
                             <td>
                                 @if($m->batch)
@@ -97,8 +100,7 @@
                             </td>
                             @php $q = (float)$m->quantity; $qFmt = floor($q)==$q ? number_format($q,0,',','.') : number_format($q,3,',','.'); @endphp
                             <td class="text-end fw-bold text-success">+{{ $qFmt }} <span class="text-muted fs-8">{{ $m->product->baseUom?->code ?? '' }}</span></td>
-                            <td class="text-end">Rp {{ number_format((float)$m->cost_price, 0, ',', '.') }}</td>
-                            <td class="fs-7">{{ $m->createdBy?->full_name ?? '—' }}</td>
+                            <td class="text-end pe-4 fw-bold">{{ number_format((float)$m->cost_price, 0, ',', '.') }}</td>
                             <td class="text-end pe-4">
                                 <a href="{{ route('stock_openings.show', $m) }}" class="btn btn-sm btn-light-info">
                                     <i class="ki-outline ki-eye fs-3"></i>
@@ -106,7 +108,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="9" class="text-center text-muted py-10">Belum ada data stock opening.</td></tr>
+                        <tr><td colspan="7" class="text-center text-muted py-10">Belum ada data stock opening.</td></tr>
                     @endforelse
                 </tbody>
             </table>

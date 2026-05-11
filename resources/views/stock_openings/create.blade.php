@@ -52,22 +52,26 @@
         </div>
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-row-bordered align-middle gy-3" id="tbl_items">
+                <table class="table table-row-bordered align-middle gy-3" id="tbl_items" style="min-width:900px">
                     <thead>
                         <tr class="fw-bold text-muted bg-light">
-                            <th style="width:30%">Produk *</th>
-                            <th style="width:12%" class="text-end">Qty *</th>
-                            <th style="width:8%">UoM</th>
-                            <th style="width:15%" class="text-end">Cost (Rp) *</th>
-                            <th style="width:12%">Production</th>
-                            <th style="width:12%">Expiry</th>
-                            <th style="width:8%"></th>
+                            <th style="min-width:220px">Produk *</th>
+                            <th class="text-end" style="min-width:110px">Qty *</th>
+                            <th style="min-width:70px">UoM</th>
+                            <th class="text-end" style="min-width:140px">Cost (Rp) *</th>
+                            <th style="min-width:140px">Production</th>
+                            <th style="min-width:140px">Expiry</th>
+                            <th style="min-width:60px"></th>
                         </tr>
                     </thead>
                     <tbody id="items_body">
                         {{-- Diisi via JS --}}
                     </tbody>
                 </table>
+            </div>
+            <div class="d-md-none alert alert-light-info mt-3 fs-8 py-2 mb-0">
+                <i class="ki-outline ki-information fs-3 me-1"></i>
+                Tabel bisa di-<strong>geser ke samping</strong> untuk lihat semua kolom.
             </div>
             @error('items')<div class="text-danger fs-7 mt-2">{{ $message }}</div>@enderror
             <div class="form-text mt-3">

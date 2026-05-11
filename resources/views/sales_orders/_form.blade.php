@@ -118,15 +118,15 @@
             </div>
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-row-bordered align-middle gy-3" id="tbl_items">
+                    <table class="table table-row-bordered align-middle gy-3" id="tbl_items" style="min-width:820px">
                         <thead>
                             <tr class="fw-bold text-muted bg-light">
-                                <th style="width:32%">Produk *</th>
-                                <th style="width:11%" class="text-end">Qty *</th>
-                                <th style="width:14%" class="text-end">Harga *</th>
-                                <th style="width:9%" class="text-end">Disc %</th>
-                                <th style="width:18%" class="text-end">Subtotal</th>
-                                <th style="width:8%"></th>
+                                <th style="min-width:240px">Produk *</th>
+                                <th class="text-end" style="min-width:110px">Qty *</th>
+                                <th class="text-end" style="min-width:140px">Harga *</th>
+                                <th class="text-end" style="min-width:90px">Disc %</th>
+                                <th class="text-end" style="min-width:140px">Subtotal</th>
+                                <th style="min-width:60px"></th>
                             </tr>
                         </thead>
                         <tbody id="items_body"></tbody>
@@ -138,6 +138,10 @@
                             </tr>
                         </tfoot>
                     </table>
+                </div>
+                <div class="d-md-none alert alert-light-info mt-3 fs-8 py-2 mb-0">
+                    <i class="ki-outline ki-information fs-3 me-1"></i>
+                    Tabel bisa di-<strong>geser ke samping</strong> untuk lihat semua kolom.
                 </div>
                 @error('items')<div class="text-danger fs-7 mt-2">{{ $message }}</div>@enderror
             </div>

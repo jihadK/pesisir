@@ -79,32 +79,17 @@
                 <div class="row mb-5">
                     <label class="col-form-label col-md-3 fw-semibold required">Nama Produk</label>
                     <div class="col-md-9">
-                        <input type="text" name="name" value="{{ old('name', $product->name) }}"
+                        <input type="text" name="name" id="prod_name" value="{{ old('name', $product->name) }}"
                                class="form-control form-control-solid @error('name') is-invalid @enderror"
-                               placeholder="Tuna Sirip Kuning Premium" maxlength="150" required />
+                               placeholder="Otomatis dari sub-kategori, bisa diedit" maxlength="150" required />
                         @error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        <div class="form-text fs-8">Default ambil dari nama sub-kategori. Bisa diedit untuk varian (mis. "Tuna Premium").</div>
                     </div>
                 </div>
 
-                <div class="row mb-5">
-                    <label class="col-form-label col-md-3 fw-semibold">Nama Ilmiah</label>
-                    <div class="col-md-9">
-                        <input type="text" name="scientific_name" value="{{ old('scientific_name', $product->scientific_name) }}"
-                               class="form-control form-control-solid @error('scientific_name') is-invalid @enderror"
-                               placeholder="Thunnus albacares" maxlength="150" />
-                        @error('scientific_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
-                </div>
-
-                <div class="row mb-5">
-                    <label class="col-form-label col-md-3 fw-semibold">Asal Tangkap</label>
-                    <div class="col-md-9">
-                        <input type="text" name="origin" value="{{ old('origin', $product->origin) }}"
-                               class="form-control form-control-solid @error('origin') is-invalid @enderror"
-                               placeholder="Selat Makassar / Laut Banda" maxlength="100" />
-                        @error('origin')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
-                </div>
+                {{-- Nama Ilmiah & Asal Tangkap di-hide tapi tetap di-submit (nilai existing dipertahankan) --}}
+                <input type="hidden" name="scientific_name" value="{{ old('scientific_name', $product->scientific_name) }}" />
+                <input type="hidden" name="origin" value="{{ old('origin', $product->origin) }}" />
 
                 <div class="row mb-5">
                     <label class="col-form-label col-md-3 fw-semibold">Deskripsi</label>
@@ -233,30 +218,9 @@
         <div class="card mb-5">
             <div class="card-header"><h3 class="card-title">Penyimpanan &amp; Kualitas</h3></div>
             <div class="card-body">
-                <div class="row mb-5">
-                    <label class="col-form-label col-md-3 fw-semibold">Suhu Penyimpanan</label>
-                    <div class="col-md-9">
-                        <div class="row">
-                            <div class="col-md-5">
-                                <div class="input-group">
-                                    <input type="number" step="0.1" name="storage_temp_min" value="{{ old('storage_temp_min', $product->storage_temp_min) }}"
-                                           class="form-control form-control-solid @error('storage_temp_min') is-invalid @enderror" placeholder="-25.0" />
-                                    <span class="input-group-text">°C min</span>
-                                </div>
-                            </div>
-                            <div class="col-md-2 d-flex align-items-center justify-content-center">~</div>
-                            <div class="col-md-5">
-                                <div class="input-group">
-                                    <input type="number" step="0.1" name="storage_temp_max" value="{{ old('storage_temp_max', $product->storage_temp_max) }}"
-                                           class="form-control form-control-solid @error('storage_temp_max') is-invalid @enderror" placeholder="-18.0" />
-                                    <span class="input-group-text">°C max</span>
-                                </div>
-                            </div>
-                        </div>
-                        @error('storage_temp_min')<div class="text-danger fs-7 mt-1">{{ $message }}</div>@enderror
-                        @error('storage_temp_max')<div class="text-danger fs-7 mt-1">{{ $message }}</div>@enderror
-                    </div>
-                </div>
+                {{-- Suhu Penyimpanan: hide UI, set default -25 / -18 (frozen storage range) --}}
+                <input type="hidden" name="storage_temp_min" value="{{ old('storage_temp_min', $product->storage_temp_min ?? -25) }}" />
+                <input type="hidden" name="storage_temp_max" value="{{ old('storage_temp_max', $product->storage_temp_max ?? -18) }}" />
 
                 <div class="row mb-5">
                     <label class="col-form-label col-md-3 fw-semibold">Umur Simpan (hari)</label>
@@ -289,14 +253,14 @@
                 <div class="row mb-5">
                     <label class="col-form-label col-md-3 fw-semibold">Stock Minimum</label>
                     <div class="col-md-3">
-                        <input type="number" step="0.001" name="min_stock_level" value="{{ old('min_stock_level', $product->min_stock_level) }}"
-                               class="form-control form-control-solid @error('min_stock_level') is-invalid @enderror" min="0" placeholder="0.000" />
+                        <input type="number" step="1" name="min_stock_level" value="{{ old('min_stock_level', (int) $product->min_stock_level) }}"
+                               class="form-control form-control-solid @error('min_stock_level') is-invalid @enderror" min="0" placeholder="0" />
                         @error('min_stock_level')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         <div class="form-text">Alert kalau stock total &lt; nilai ini.</div>
                     </div>
                     <label class="col-form-label col-md-3 fw-semibold">Stock Maximum</label>
                     <div class="col-md-3">
-                        <input type="number" step="0.001" name="max_stock_level" value="{{ old('max_stock_level', $product->max_stock_level) }}"
+                        <input type="number" step="1" name="max_stock_level" value="{{ old('max_stock_level', $product->max_stock_level ? (int) $product->max_stock_level : '') }}"
                                class="form-control form-control-solid @error('max_stock_level') is-invalid @enderror" min="0" placeholder="(opsional)" />
                         @error('max_stock_level')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
@@ -575,6 +539,30 @@ document.addEventListener('DOMContentLoaded', function () {
             var reader = new FileReader();
             reader.onload = function (ev) { preview.style.backgroundImage = "url('" + ev.target.result + "')"; };
             reader.readAsDataURL(file);
+        });
+    }
+
+    // ========== Auto-fill Nama Produk dari Sub-Kategori ==========
+    // Kalau field nama masih kosong, isi otomatis dengan nama sub-kategori yang dipilih.
+    // Kalau user sudah mengetik manual, tidak akan di-overwrite.
+    var prodNameEl = document.getElementById('prod_name');
+    var prodCatEl  = document.getElementById('prod_category');
+    var nameManuallyEdited = !! (prodNameEl?.value || '').trim();
+    if (prodNameEl) {
+        prodNameEl.addEventListener('input', function () {
+            nameManuallyEdited = !! this.value.trim();
+        });
+    }
+    if (prodCatEl && window.jQuery) {
+        window.jQuery(prodCatEl).on('change', function () {
+            if (nameManuallyEdited) return;
+            var sel = this.options[this.selectedIndex];
+            if (! sel || ! sel.value) return;
+            // Breadcrumb format: "Ikan Laut › Tuna" — ambil bagian terakhir
+            var breadcrumb = sel.text.trim();
+            var parts = breadcrumb.split('›').map(function (s) { return s.trim(); });
+            var subName = parts[parts.length - 1];
+            if (subName) prodNameEl.value = subName;
         });
     }
 

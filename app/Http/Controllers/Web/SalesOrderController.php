@@ -81,7 +81,11 @@ class SalesOrderController extends Controller
 
     public function show(SalesOrder $salesOrder): View
     {
-        $salesOrder->load(['items.product:id,sku,name', 'items.uom:id,code', 'customer', 'warehouse', 'salesUser', 'createdBy', 'paymentMethod']);
+        $salesOrder->load([
+            'items.product:id,sku,name,pack_content_type,pack_content_min,pack_content_max,pack_weight_min_g,pack_weight_max_g',
+            'items.uom:id,code',
+            'customer', 'warehouse', 'salesUser', 'createdBy', 'paymentMethod',
+        ]);
 
         return view('sales_orders.show', [
             'so'              => $salesOrder,
@@ -96,7 +100,7 @@ class SalesOrderController extends Controller
                 ->with('flash', Flash::err('SO yang sudah confirmed tidak bisa diedit.', ResponseCode::BUSINESS_RULE_FAILED));
         }
 
-        $salesOrder->load(['items.product:id,sku,name']);
+        $salesOrder->load(['items.product:id,sku,name,pack_content_type,pack_content_min,pack_content_max,pack_weight_min_g,pack_weight_max_g']);
 
         return view('sales_orders.edit', [
             'so'             => $salesOrder,

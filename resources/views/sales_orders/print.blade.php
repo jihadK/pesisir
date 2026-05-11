@@ -41,6 +41,9 @@
         .btn-wa { background:#25D366; }
         .btn-wa:hover { background:#128C7E; }
         .btn-wa[disabled] { background:#aaa; cursor:not-allowed; }
+        .btn-img { background:#9c27b0; }
+        .btn-img:hover { background:#7b1fa2; }
+        .btn-img[disabled] { background:#aaa; cursor:not-allowed; }
     </style>
 </head>
 <body>
@@ -102,9 +105,54 @@
         </button>
     @endif
 
+    <button id="btn_download_img" class="btn btn-img" onclick="downloadAsImage()">
+        <span style="font-size:16px">🖼️</span> Download Gambar
+    </button>
     <button class="btn" onclick="window.print()">🖨️ Print / Save as PDF</button>
     <a href="{{ route('sales_orders.show', $so) }}" class="btn" style="background:#666">← Kembali</a>
 </div>
+
+<!-- html2canvas dari CDN, load di-defer agar tidak block render -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+<script>
+function downloadAsImage() {
+    const btn = document.getElementById('btn_download_img');
+    if (typeof html2canvas === 'undefined') {
+        alert('Library belum siap, coba lagi beberapa detik.');
+        return;
+    }
+    btn.disabled = true;
+    const originalHtml = btn.innerHTML;
+    btn.innerHTML = '⏳ Membuat gambar...';
+
+    // Sembunyikan toolbar dulu supaya tidak ikut di-capture
+    const toolbar = document.querySelector('.toolbar');
+    if (toolbar) toolbar.style.display = 'none';
+
+    html2canvas(document.body, {
+        scale: 2,              // 2x = lebih tajam (mirip Retina)
+        backgroundColor: '#ffffff',
+        useCORS: true,
+        logging: false,
+    }).then(canvas => {
+        if (toolbar) toolbar.style.display = '';
+
+        const link = document.createElement('a');
+        link.download = 'Proforma-{{ $so->so_number }}'.replace(/\//g, '-') + '.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+    }).catch(err => {
+        if (toolbar) toolbar.style.display = '';
+        console.error(err);
+        alert('Gagal membuat gambar: ' + (err.message || err));
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+    });
+}
+</script>
 
 <div class="header">
     <div class="brand">

@@ -109,7 +109,13 @@ class StockOpeningService
     public function listHistory(array $filters)
     {
         return StockMovement::query()
-            ->with(['product:id,sku,name', 'warehouse:id,code,name', 'batch:id,batch_number,expiry_date', 'createdBy:id,full_name'])
+            ->with([
+                'product:id,sku,name,base_uom_id,pack_content_type,pack_content_min,pack_content_max,pack_weight_min_g,pack_weight_max_g',
+                'product.baseUom:id,code',
+                'warehouse:id,code,name',
+                'batch:id,batch_number,expiry_date',
+                'createdBy:id,full_name',
+            ])
             ->where('reference_type', StockMovement::REF_OPENING)
             ->ofProduct($filters['product_id'] ?? null)
             ->ofWarehouse($filters['warehouse_id'] ?? null)
