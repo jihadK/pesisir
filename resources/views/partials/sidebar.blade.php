@@ -222,7 +222,7 @@
                     </div>
                 </div>
 
-                <div data-kt-menu-trigger="click" class="menu-item menu-accordion {{ request()->routeIs('sales_orders.*') ? 'here show' : '' }}">
+                <div data-kt-menu-trigger="click" class="menu-item menu-accordion {{ request()->routeIs('sales_orders.*','delivery_orders.*') ? 'here show' : '' }}">
                     <span class="menu-link">
                         <span class="menu-icon"><i class="ki-outline ki-basket fs-2"></i></span>
                         <span class="menu-title">Sales</span>
@@ -237,12 +237,14 @@
                             </a>
                         </div>
                         @endif
+                        @if(auth()->user()?->hasPermission('delivery_order.view'))
                         <div class="menu-item">
-                            <a class="menu-link" href="#">
+                            <a class="menu-link {{ request()->routeIs('delivery_orders.*') ? 'active' : '' }}" href="{{ route('delivery_orders.index') }}">
                                 <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
-                                <span class="menu-title text-muted">Delivery Order <span class="badge badge-light-secondary fs-9 ms-1">soon</span></span>
+                                <span class="menu-title">Delivery Order</span>
                             </a>
                         </div>
+                        @endif
                         <div class="menu-item">
                             <a class="menu-link" href="#">
                                 <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
@@ -252,29 +254,33 @@
                     </div>
                 </div>
 
-                <div data-kt-menu-trigger="click" class="menu-item menu-accordion">
+                <div data-kt-menu-trigger="click" class="menu-item menu-accordion {{ request()->routeIs('invoices.*','payments.*') ? 'here show' : '' }}">
                     <span class="menu-link">
                         <span class="menu-icon"><i class="ki-outline ki-bill fs-2"></i></span>
                         <span class="menu-title">Invoicing</span>
                         <span class="menu-arrow"></span>
                     </span>
                     <div class="menu-sub menu-sub-accordion menu-active-bg">
+                        @if(auth()->user()?->hasPermission('invoice.view'))
                         <div class="menu-item">
-                            <a class="menu-link" href="#">
+                            <a class="menu-link {{ request()->routeIs('invoices.*') ? 'active' : '' }}" href="{{ route('invoices.index') }}">
                                 <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
                                 <span class="menu-title">Invoice</span>
                             </a>
                         </div>
+                        @endif
+                        @if(auth()->user()?->hasPermission('payment.view'))
                         <div class="menu-item">
-                            <a class="menu-link" href="#">
+                            <a class="menu-link {{ request()->routeIs('payments.*') ? 'active' : '' }}" href="{{ route('payments.index') }}">
                                 <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
                                 <span class="menu-title">Payment</span>
                             </a>
                         </div>
+                        @endif
                         <div class="menu-item">
                             <a class="menu-link" href="#">
                                 <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
-                                <span class="menu-title">AR Aging</span>
+                                <span class="menu-title text-muted">AR Aging <span class="badge badge-light-secondary fs-9 ms-1">soon</span></span>
                             </a>
                         </div>
                     </div>

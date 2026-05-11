@@ -4,6 +4,9 @@ use App\Http\Controllers\Web\Auth\LoginController;
 use App\Http\Controllers\Web\CategoryController;
 use App\Http\Controllers\Web\CustomerController;
 use App\Http\Controllers\Web\DashboardController;
+use App\Http\Controllers\Web\DeliveryOrderController;
+use App\Http\Controllers\Web\InvoiceController;
+use App\Http\Controllers\Web\PaymentController;
 use App\Http\Controllers\Web\GradeController;
 use App\Http\Controllers\Web\PaymentMethodController;
 use App\Http\Controllers\Web\PriceTierController;
@@ -210,6 +213,68 @@ Route::middleware('auth')->group(function () {
         });
         Route::middleware('permission:sales_order.cancel')->group(function () {
             Route::post('/{salesOrder}/cancel',  [SalesOrderController::class, 'cancel'])->whereNumber('salesOrder')->name('cancel');
+        });
+    });
+
+    // ========== SALES — Delivery Order ==========
+    Route::prefix('delivery-orders')->name('delivery_orders.')->group(function () {
+        Route::middleware('permission:delivery_order.view')->group(function () {
+            Route::get('/so-items', [DeliveryOrderController::class, 'soItems'])->name('so-items');
+        });
+        Route::middleware('permission:delivery_order.create')->group(function () {
+            Route::get('/create', [DeliveryOrderController::class, 'create'])->name('create');
+            Route::post('/',      [DeliveryOrderController::class, 'store'])->name('store');
+        });
+        Route::middleware('permission:delivery_order.view')->group(function () {
+            Route::get('/',                       [DeliveryOrderController::class, 'index'])->name('index');
+            Route::get('/{deliveryOrder}',        [DeliveryOrderController::class, 'show'])->whereNumber('deliveryOrder')->name('show');
+        });
+        Route::middleware('permission:delivery_order.print')->group(function () {
+            Route::get('/{deliveryOrder}/print',  [DeliveryOrderController::class, 'print'])->whereNumber('deliveryOrder')->name('print');
+        });
+        Route::middleware('permission:delivery_order.ship')->group(function () {
+            Route::post('/{deliveryOrder}/ship',  [DeliveryOrderController::class, 'ship'])->whereNumber('deliveryOrder')->name('ship');
+        });
+        Route::middleware('permission:delivery_order.cancel')->group(function () {
+            Route::post('/{deliveryOrder}/cancel', [DeliveryOrderController::class, 'cancel'])->whereNumber('deliveryOrder')->name('cancel');
+        });
+    });
+
+    // ========== INVOICING — Invoice ==========
+    Route::prefix('invoices')->name('invoices.')->group(function () {
+        Route::middleware('permission:invoice.view')->group(function () {
+            Route::get('/',              [InvoiceController::class, 'index'])->name('index');
+            Route::get('/{invoice}',     [InvoiceController::class, 'show'])->whereNumber('invoice')->name('show');
+        });
+        Route::middleware('permission:invoice.print')->group(function () {
+            Route::get('/{invoice}/print', [InvoiceController::class, 'print'])->whereNumber('invoice')->name('print');
+        });
+        Route::middleware('permission:invoice.create')->group(function () {
+            Route::post('/from-do/{deliveryOrder}', [InvoiceController::class, 'createFromDO'])->whereNumber('deliveryOrder')->name('create-from-do');
+        });
+        Route::middleware('permission:invoice.cancel')->group(function () {
+            Route::post('/{invoice}/cancel', [InvoiceController::class, 'cancel'])->whereNumber('invoice')->name('cancel');
+        });
+        Route::middleware('permission:payment.create')->group(function () {
+            Route::post('/{invoice}/quick-pay', [InvoiceController::class, 'quickPay'])->whereNumber('invoice')->name('quick-pay');
+        });
+    });
+
+    // ========== INVOICING — Payment ==========
+    Route::prefix('payments')->name('payments.')->group(function () {
+        Route::middleware('permission:payment.view')->group(function () {
+            Route::get('/outstanding-invoices', [PaymentController::class, 'outstandingInvoices'])->name('outstanding-invoices');
+        });
+        Route::middleware('permission:payment.create')->group(function () {
+            Route::get('/create', [PaymentController::class, 'create'])->name('create');
+            Route::post('/',      [PaymentController::class, 'store'])->name('store');
+        });
+        Route::middleware('permission:payment.view')->group(function () {
+            Route::get('/',           [PaymentController::class, 'index'])->name('index');
+            Route::get('/{payment}',  [PaymentController::class, 'show'])->whereNumber('payment')->name('show');
+        });
+        Route::middleware('permission:payment.cancel')->group(function () {
+            Route::post('/{payment}/cancel', [PaymentController::class, 'cancel'])->whereNumber('payment')->name('cancel');
         });
     });
 

@@ -121,6 +121,12 @@
                     </form>
                 @endif
 
+                @if(in_array($so->status, [\App\Models\SalesOrder::STATUS_CONFIRMED, \App\Models\SalesOrder::STATUS_PARTIAL]) && auth()->user()?->hasPermission('delivery_order.create'))
+                    <a href="{{ route('delivery_orders.create', ['so_id' => $so->id]) }}" class="btn btn-primary">
+                        <i class="ki-outline ki-truck fs-2"></i> Buat Delivery Order
+                    </a>
+                @endif
+
                 @if($so->isCancellable() && auth()->user()?->hasPermission('sales_order.cancel'))
                     <form method="POST" action="{{ route('sales_orders.cancel', $so) }}" onsubmit="return confirm('Batalkan SO ini? Reserved stock akan dikembalikan.')">
                         @csrf
