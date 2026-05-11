@@ -116,6 +116,7 @@
                     </a>
                 </div>
 
+                @if(auth()->user()?->hasPermission('payment_method.view'))
                 <div data-kt-menu-trigger="click" class="menu-item menu-accordion {{ request()->routeIs('payment_methods.*') ? 'here show' : '' }}">
                     <span class="menu-link">
                         <span class="menu-icon"><i class="ki-outline ki-setting-3 fs-2"></i></span>
@@ -124,48 +125,19 @@
                     </span>
                     <div class="menu-sub menu-sub-accordion menu-active-bg">
                         <div class="menu-item">
-                            <a class="menu-link" href="#">
-                                <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
-                                <span class="menu-title text-muted">Pajak <span class="badge badge-light-secondary fs-9 ms-1">soon</span></span>
-                            </a>
-                        </div>
-                        @if(auth()->user()?->hasPermission('payment_method.view'))
-                        <div class="menu-item">
                             <a class="menu-link {{ request()->routeIs('payment_methods.*') ? 'active' : '' }}" href="{{ route('payment_methods.index') }}">
                                 <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
                                 <span class="menu-title">Metode Pembayaran</span>
                             </a>
                         </div>
-                        @endif
                     </div>
                 </div>
+                @endif
 
                 {{-- ===== INVENTORY ===== --}}
                 <div class="menu-item">
                     <div class="menu-content pt-8 pb-2">
                         <span class="menu-section text-muted text-uppercase fs-8 ls-1">Inventory</span>
-                    </div>
-                </div>
-
-                <div data-kt-menu-trigger="click" class="menu-item menu-accordion">
-                    <span class="menu-link">
-                        <span class="menu-icon"><i class="ki-outline ki-handcart fs-2"></i></span>
-                        <span class="menu-title">Pembelian</span>
-                        <span class="menu-arrow"></span>
-                    </span>
-                    <div class="menu-sub menu-sub-accordion menu-active-bg">
-                        <div class="menu-item">
-                            <a class="menu-link" href="#">
-                                <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
-                                <span class="menu-title">Purchase Order</span>
-                            </a>
-                        </div>
-                        <div class="menu-item">
-                            <a class="menu-link" href="#">
-                                <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
-                                <span class="menu-title">Goods Receipt (GRN)</span>
-                            </a>
-                        </div>
                     </div>
                 </div>
 
@@ -200,18 +172,6 @@
                             </a>
                         </div>
                         @endif
-                        <div class="menu-item">
-                            <a class="menu-link" href="#">
-                                <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
-                                <span class="menu-title text-muted">Mutasi Gudang <span class="badge badge-light-secondary fs-9 ms-1">soon</span></span>
-                            </a>
-                        </div>
-                        <div class="menu-item">
-                            <a class="menu-link" href="#">
-                                <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
-                                <span class="menu-title text-muted">Stock Opname <span class="badge badge-light-secondary fs-9 ms-1">soon</span></span>
-                            </a>
-                        </div>
                     </div>
                 </div>
 
@@ -245,12 +205,6 @@
                             </a>
                         </div>
                         @endif
-                        <div class="menu-item">
-                            <a class="menu-link" href="#">
-                                <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
-                                <span class="menu-title text-muted">Retur Penjualan <span class="badge badge-light-secondary fs-9 ms-1">soon</span></span>
-                            </a>
-                        </div>
                     </div>
                 </div>
 
@@ -277,97 +231,9 @@
                             </a>
                         </div>
                         @endif
-                        <div class="menu-item">
-                            <a class="menu-link" href="#">
-                                <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
-                                <span class="menu-title text-muted">AR Aging <span class="badge badge-light-secondary fs-9 ms-1">soon</span></span>
-                            </a>
-                        </div>
                     </div>
                 </div>
 
-                {{-- ===== LAPORAN ===== --}}
-                <div class="menu-item">
-                    <div class="menu-content pt-8 pb-2">
-                        <span class="menu-section text-muted text-uppercase fs-8 ls-1">Laporan</span>
-                    </div>
-                </div>
-
-                <div data-kt-menu-trigger="click" class="menu-item menu-accordion">
-                    <span class="menu-link">
-                        <span class="menu-icon"><i class="ki-outline ki-chart-pie-3 fs-2"></i></span>
-                        <span class="menu-title">Reports</span>
-                        <span class="menu-arrow"></span>
-                    </span>
-                    <div class="menu-sub menu-sub-accordion menu-active-bg">
-                        <div class="menu-item">
-                            <a class="menu-link" href="#">
-                                <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
-                                <span class="menu-title">Laporan Stock</span>
-                            </a>
-                        </div>
-                        <div class="menu-item">
-                            <a class="menu-link" href="#">
-                                <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
-                                <span class="menu-title">Laporan Penjualan</span>
-                            </a>
-                        </div>
-                        <div class="menu-item">
-                            <a class="menu-link" href="#">
-                                <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
-                                <span class="menu-title">Laporan AR</span>
-                            </a>
-                        </div>
-                        <div class="menu-item">
-                            <a class="menu-link" href="#">
-                                <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
-                                <span class="menu-title">Laporan Profit</span>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- ===== SISTEM ===== --}}
-                <div class="menu-item">
-                    <div class="menu-content pt-8 pb-2">
-                        <span class="menu-section text-muted text-uppercase fs-8 ls-1">Sistem</span>
-                    </div>
-                </div>
-
-                <div data-kt-menu-trigger="click" class="menu-item menu-accordion">
-                    <span class="menu-link">
-                        <span class="menu-icon"><i class="ki-outline ki-security-user fs-2"></i></span>
-                        <span class="menu-title">Manajemen User</span>
-                        <span class="menu-arrow"></span>
-                    </span>
-                    <div class="menu-sub menu-sub-accordion menu-active-bg">
-                        <div class="menu-item">
-                            <a class="menu-link" href="#">
-                                <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
-                                <span class="menu-title">Users</span>
-                            </a>
-                        </div>
-                        <div class="menu-item">
-                            <a class="menu-link" href="#">
-                                <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
-                                <span class="menu-title">Roles</span>
-                            </a>
-                        </div>
-                        <div class="menu-item">
-                            <a class="menu-link" href="#">
-                                <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
-                                <span class="menu-title">Permissions</span>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="menu-item">
-                    <a class="menu-link" href="#">
-                        <span class="menu-icon"><i class="ki-outline ki-file-up fs-2"></i></span>
-                        <span class="menu-title">Audit Log</span>
-                    </a>
-                </div>
             </div>
         </div>
     </div>
