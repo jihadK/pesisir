@@ -2,16 +2,21 @@
 
 use App\Http\Controllers\Web\Auth\LoginController;
 use App\Http\Controllers\Web\CategoryController;
+use App\Http\Controllers\Web\CleaningServiceController;
 use App\Http\Controllers\Web\CustomerController;
 use App\Http\Controllers\Web\DashboardController;
 use App\Http\Controllers\Web\DeliveryOrderController;
+use App\Http\Controllers\Web\EmployeeController;
 use App\Http\Controllers\Web\InvoiceController;
 use App\Http\Controllers\Web\PaymentController;
 use App\Http\Controllers\Web\GradeController;
 use App\Http\Controllers\Web\PaymentMethodController;
 use App\Http\Controllers\Web\PriceTierController;
 use App\Http\Controllers\Web\ProductController;
+use App\Http\Controllers\Web\PurchaseOrderController;
 use App\Http\Controllers\Web\SalesOrderController;
+use App\Http\Controllers\Web\ServiceRateController;
+use App\Http\Controllers\Web\SuppliesPurchaseController;
 use App\Http\Controllers\Web\StockAdjustmentController;
 use App\Http\Controllers\Web\StockCardController;
 use App\Http\Controllers\Web\StockOpeningController;
@@ -275,6 +280,103 @@ Route::middleware('auth')->group(function () {
         });
         Route::middleware('permission:payment.cancel')->group(function () {
             Route::post('/{payment}/cancel', [PaymentController::class, 'cancel'])->whereNumber('payment')->name('cancel');
+        });
+    });
+
+    // ========== MASTER — Employee ==========
+    Route::prefix('employees')->name('employees.')->group(function () {
+        Route::middleware('permission:employee.create')->group(function () {
+            Route::get('/create', [EmployeeController::class, 'create'])->name('create');
+            Route::post('/',      [EmployeeController::class, 'store'])->name('store');
+        });
+        Route::middleware('permission:employee.view')->group(function () {
+            Route::get('/', [EmployeeController::class, 'index'])->name('index');
+        });
+        Route::middleware('permission:employee.update')->group(function () {
+            Route::get('/{employee}/edit', [EmployeeController::class, 'edit'])->whereNumber('employee')->name('edit');
+            Route::put('/{employee}',      [EmployeeController::class, 'update'])->whereNumber('employee')->name('update');
+        });
+        Route::middleware('permission:employee.delete')->group(function () {
+            Route::delete('/{employee}', [EmployeeController::class, 'destroy'])->whereNumber('employee')->name('destroy');
+        });
+    });
+
+    // ========== MASTER — Service Rate ==========
+    Route::prefix('service-rates')->name('service_rates.')->group(function () {
+        Route::middleware('permission:service_rate.create')->group(function () {
+            Route::get('/create', [ServiceRateController::class, 'create'])->name('create');
+            Route::post('/',      [ServiceRateController::class, 'store'])->name('store');
+        });
+        Route::middleware('permission:service_rate.view')->group(function () {
+            Route::get('/', [ServiceRateController::class, 'index'])->name('index');
+        });
+        Route::middleware('permission:service_rate.update')->group(function () {
+            Route::get('/{service_rate}/edit', [ServiceRateController::class, 'edit'])->whereNumber('service_rate')->name('edit');
+            Route::put('/{service_rate}',      [ServiceRateController::class, 'update'])->whereNumber('service_rate')->name('update');
+        });
+        Route::middleware('permission:service_rate.delete')->group(function () {
+            Route::delete('/{service_rate}', [ServiceRateController::class, 'destroy'])->whereNumber('service_rate')->name('destroy');
+        });
+    });
+
+    // ========== PEMBELIAN — Cleaning Service ==========
+    Route::prefix('cleaning-services')->name('cleaning_services.')->group(function () {
+        Route::middleware('permission:cleaning_service.create')->group(function () {
+            Route::get('/create', [CleaningServiceController::class, 'create'])->name('create');
+            Route::post('/',      [CleaningServiceController::class, 'store'])->name('store');
+        });
+        Route::middleware('permission:cleaning_service.view')->group(function () {
+            Route::get('/', [CleaningServiceController::class, 'index'])->name('index');
+        });
+        Route::middleware('permission:cleaning_service.update')->group(function () {
+            Route::get('/{cleaningService}/edit', [CleaningServiceController::class, 'edit'])->whereNumber('cleaningService')->name('edit');
+            Route::put('/{cleaningService}',      [CleaningServiceController::class, 'update'])->whereNumber('cleaningService')->name('update');
+        });
+        Route::middleware('permission:cleaning_service.delete')->group(function () {
+            Route::delete('/{cleaningService}', [CleaningServiceController::class, 'destroy'])->whereNumber('cleaningService')->name('destroy');
+        });
+    });
+
+    // ========== PEMBELIAN — Supplies Purchase ==========
+    Route::prefix('supplies-purchases')->name('supplies_purchases.')->group(function () {
+        Route::middleware('permission:supplies_purchase.create')->group(function () {
+            Route::get('/create', [SuppliesPurchaseController::class, 'create'])->name('create');
+            Route::post('/',      [SuppliesPurchaseController::class, 'store'])->name('store');
+        });
+        Route::middleware('permission:supplies_purchase.view')->group(function () {
+            Route::get('/', [SuppliesPurchaseController::class, 'index'])->name('index');
+        });
+        Route::middleware('permission:supplies_purchase.update')->group(function () {
+            Route::get('/{suppliesPurchase}/edit', [SuppliesPurchaseController::class, 'edit'])->whereNumber('suppliesPurchase')->name('edit');
+            Route::put('/{suppliesPurchase}',      [SuppliesPurchaseController::class, 'update'])->whereNumber('suppliesPurchase')->name('update');
+        });
+        Route::middleware('permission:supplies_purchase.delete')->group(function () {
+            Route::delete('/{suppliesPurchase}', [SuppliesPurchaseController::class, 'destroy'])->whereNumber('suppliesPurchase')->name('destroy');
+        });
+    });
+
+    // ========== INVENTORY — Purchase Order ==========
+    Route::prefix('purchase-orders')->name('purchase_orders.')->group(function () {
+        Route::middleware('permission:purchase_order.create')->group(function () {
+            Route::get('/create', [PurchaseOrderController::class, 'create'])->name('create');
+            Route::post('/',      [PurchaseOrderController::class, 'store'])->name('store');
+        });
+        Route::middleware('permission:purchase_order.view')->group(function () {
+            Route::get('/',                    [PurchaseOrderController::class, 'index'])->name('index');
+            Route::get('/{purchaseOrder}',     [PurchaseOrderController::class, 'show'])->whereNumber('purchaseOrder')->name('show');
+        });
+        Route::middleware('permission:purchase_order.print')->group(function () {
+            Route::get('/{purchaseOrder}/print', [PurchaseOrderController::class, 'print'])->whereNumber('purchaseOrder')->name('print');
+        });
+        Route::middleware('permission:purchase_order.update')->group(function () {
+            Route::get('/{purchaseOrder}/edit', [PurchaseOrderController::class, 'edit'])->whereNumber('purchaseOrder')->name('edit');
+            Route::put('/{purchaseOrder}',      [PurchaseOrderController::class, 'update'])->whereNumber('purchaseOrder')->name('update');
+        });
+        Route::middleware('permission:purchase_order.submit')->group(function () {
+            Route::post('/{purchaseOrder}/submit', [PurchaseOrderController::class, 'submit'])->whereNumber('purchaseOrder')->name('submit');
+        });
+        Route::middleware('permission:purchase_order.cancel')->group(function () {
+            Route::post('/{purchaseOrder}/cancel', [PurchaseOrderController::class, 'cancel'])->whereNumber('purchaseOrder')->name('cancel');
         });
     });
 

@@ -69,7 +69,8 @@
                         <th>Produk</th>
                         <th>Batch</th>
                         <th class="text-end">Qty</th>
-                        <th class="text-end pe-4">Cost</th>
+                        <th class="text-end">Cost</th>
+                        <th class="text-end">Harga Jual</th>
                         <th class="text-end pe-4">Aksi</th>
                     </tr>
                 </thead>
@@ -100,7 +101,14 @@
                             </td>
                             @php $q = (float)$m->quantity; $qFmt = floor($q)==$q ? number_format($q,0,',','.') : number_format($q,3,',','.'); @endphp
                             <td class="text-end fw-bold text-success">+{{ $qFmt }} <span class="text-muted fs-8">{{ $m->product->baseUom?->code ?? '' }}</span></td>
-                            <td class="text-end pe-4 fw-bold">{{ number_format((float)$m->cost_price, 0, ',', '.') }}</td>
+                            <td class="text-end fw-bold">{{ number_format((float)$m->cost_price, 0, ',', '.') }}</td>
+                            <td class="text-end fw-bold text-primary">
+                                @if((float)$m->product?->default_sell_price > 0)
+                                    {{ number_format((float)$m->product->default_sell_price, 0, ',', '.') }}
+                                @else
+                                    <span class="text-muted">—</span>
+                                @endif
+                            </td>
                             <td class="text-end pe-4">
                                 <a href="{{ route('stock_openings.show', $m) }}" class="btn btn-sm btn-light-info">
                                     <i class="ki-outline ki-eye fs-3"></i>
@@ -108,7 +116,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="7" class="text-center text-muted py-10">Belum ada data stock opening.</td></tr>
+                        <tr><td colspan="8" class="text-center text-muted py-10">Belum ada data stock opening.</td></tr>
                     @endforelse
                 </tbody>
             </table>

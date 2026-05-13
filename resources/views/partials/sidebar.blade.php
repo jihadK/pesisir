@@ -116,20 +116,43 @@
                     </a>
                 </div>
 
-                @if(auth()->user()?->hasPermission('payment_method.view'))
-                <div data-kt-menu-trigger="click" class="menu-item menu-accordion {{ request()->routeIs('payment_methods.*') ? 'here show' : '' }}">
+                @php
+                    $hasConfigMenu = auth()->user()?->hasPermission('payment_method.view')
+                        || auth()->user()?->hasPermission('employee.view')
+                        || auth()->user()?->hasPermission('service_rate.view');
+                @endphp
+                @if($hasConfigMenu)
+                <div data-kt-menu-trigger="click" class="menu-item menu-accordion {{ request()->routeIs('payment_methods.*','employees.*','service_rates.*') ? 'here show' : '' }}">
                     <span class="menu-link">
                         <span class="menu-icon"><i class="ki-outline ki-setting-3 fs-2"></i></span>
                         <span class="menu-title">Konfigurasi</span>
                         <span class="menu-arrow"></span>
                     </span>
                     <div class="menu-sub menu-sub-accordion menu-active-bg">
+                        @if(auth()->user()?->hasPermission('payment_method.view'))
                         <div class="menu-item">
                             <a class="menu-link {{ request()->routeIs('payment_methods.*') ? 'active' : '' }}" href="{{ route('payment_methods.index') }}">
                                 <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
                                 <span class="menu-title">Metode Pembayaran</span>
                             </a>
                         </div>
+                        @endif
+                        @if(auth()->user()?->hasPermission('employee.view'))
+                        <div class="menu-item">
+                            <a class="menu-link {{ request()->routeIs('employees.*') ? 'active' : '' }}" href="{{ route('employees.index') }}">
+                                <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
+                                <span class="menu-title">Pegawai</span>
+                            </a>
+                        </div>
+                        @endif
+                        @if(auth()->user()?->hasPermission('service_rate.view'))
+                        <div class="menu-item">
+                            <a class="menu-link {{ request()->routeIs('service_rates.*') ? 'active' : '' }}" href="{{ route('service_rates.index') }}">
+                                <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
+                                <span class="menu-title">Tarif Jasa</span>
+                            </a>
+                        </div>
+                        @endif
                     </div>
                 </div>
                 @endif
@@ -140,6 +163,47 @@
                         <span class="menu-section text-muted text-uppercase fs-8 ls-1">Inventory</span>
                     </div>
                 </div>
+
+                @php
+                    $hasPembelianMenu = auth()->user()?->hasPermission('purchase_order.view')
+                        || auth()->user()?->hasPermission('cleaning_service.view')
+                        || auth()->user()?->hasPermission('supplies_purchase.view');
+                @endphp
+                @if($hasPembelianMenu)
+                <div data-kt-menu-trigger="click" class="menu-item menu-accordion {{ request()->routeIs('purchase_orders.*','cleaning_services.*','supplies_purchases.*') ? 'here show' : '' }}">
+                    <span class="menu-link">
+                        <span class="menu-icon"><i class="ki-outline ki-handcart fs-2"></i></span>
+                        <span class="menu-title">Pembelian</span>
+                        <span class="menu-arrow"></span>
+                    </span>
+                    <div class="menu-sub menu-sub-accordion menu-active-bg">
+                        @if(auth()->user()?->hasPermission('purchase_order.view'))
+                        <div class="menu-item">
+                            <a class="menu-link {{ request()->routeIs('purchase_orders.*') ? 'active' : '' }}" href="{{ route('purchase_orders.index') }}">
+                                <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
+                                <span class="menu-title">Purchase Order</span>
+                            </a>
+                        </div>
+                        @endif
+                        @if(auth()->user()?->hasPermission('cleaning_service.view'))
+                        <div class="menu-item">
+                            <a class="menu-link {{ request()->routeIs('cleaning_services.*') ? 'active' : '' }}" href="{{ route('cleaning_services.index') }}">
+                                <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
+                                <span class="menu-title">Jasa Bersih Ikan</span>
+                            </a>
+                        </div>
+                        @endif
+                        @if(auth()->user()?->hasPermission('supplies_purchase.view'))
+                        <div class="menu-item">
+                            <a class="menu-link {{ request()->routeIs('supplies_purchases.*') ? 'active' : '' }}" href="{{ route('supplies_purchases.index') }}">
+                                <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
+                                <span class="menu-title">Pembelian Lain-lain</span>
+                            </a>
+                        </div>
+                        @endif
+                    </div>
+                </div>
+                @endif
 
                 <div data-kt-menu-trigger="click" class="menu-item menu-accordion {{ request()->routeIs('stock_openings.*','stock_adjustments.*','stock_cards.*') ? 'here show' : '' }}">
                     <span class="menu-link">

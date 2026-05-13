@@ -110,7 +110,7 @@ class StockOpeningService
     {
         return StockMovement::query()
             ->with([
-                'product:id,sku,name,base_uom_id,pack_content_type,pack_content_min,pack_content_max,pack_weight_min_g,pack_weight_max_g',
+                'product:id,sku,name,base_uom_id,default_sell_price,pack_content_type,pack_content_min,pack_content_max,pack_weight_min_g,pack_weight_max_g',
                 'product.baseUom:id,code',
                 'warehouse:id,code,name',
                 'batch:id,batch_number,expiry_date',
