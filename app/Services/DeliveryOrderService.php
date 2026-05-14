@@ -109,27 +109,71 @@ class DeliveryOrderService
                 $product   = $doItem->product;
                 $qty       = (float) $doItem->quantity;
                 $warehouse = (int) $do->warehouse_id;
+                $explicitBatchId = $doItem->batch_id ? (int) $doItem->batch_id : null;
 
-                // 1. Release reserved (kurangi reserved_quantity)
-                //    Strategi: pakai batch_id yg dipilih kalau ada, kalau tidak agregat
-                $this->releaseReserved($product->id, $warehouse, $doItem->batch_id ? (int) $doItem->batch_id : null, $qty);
+                // Cari balance yang akan dikeluarkan stock-nya.
+                // Kalau DO item pilih batch spesifik → cuma dari batch itu.
+                // Kalau "Auto FEFO" → urut by expiry_date, bisa split antar batch.
+                $balQuery = DB::table('tbs_stock_balances as sb')
+                    ->leftJoin('tbm_product_batches as b', 'b.id', '=', 'sb.batch_id')
+                    ->where('sb.product_id', $product->id)
+                    ->where('sb.warehouse_id', $warehouse)
+                    ->where('sb.quantity', '>', 0);
+                if ($explicitBatchId !== null) {
+                    $balQuery->where('sb.batch_id', $explicitBatchId);
+                }
+                $balances = $balQuery
+                    ->orderByRaw('b.expiry_date IS NULL, b.expiry_date ASC')
+                    ->orderBy('sb.id')
+                    ->select('sb.id', 'sb.batch_id', 'sb.quantity', 'sb.reserved_quantity')
+                    ->lock('FOR UPDATE OF sb')
+                    ->get();
 
-                // 2. Insert StockMovement out_sale (quantity negatif)
-                $docNumber = $this->movements->nextDocNumber('DO');
-                $this->movements->createMovement([
-                    'movement_number' => $docNumber,
-                    'product_id'      => $product->id,
-                    'warehouse_id'    => $warehouse,
-                    'batch_id'        => $doItem->batch_id ? (int) $doItem->batch_id : null,
-                    'movement_type'   => StockMovement::TYPE_OUT_SALE,
-                    'reference_type'  => 'DO',
-                    'reference_id'    => $do->id,
-                    'quantity'        => -1 * $qty, // negatif untuk keluar
-                    'uom_id'          => $doItem->uom_id,
-                    'cost_price'      => (float) $product->default_cost_price,
-                    'notes'           => "DO {$do->do_number}",
-                    'created_by'      => $userId,
-                ]);
+                $remaining = $qty;
+                foreach ($balances as $bal) {
+                    if ($remaining <= 0) break;
+                    $availableHere = (float) $bal->quantity; // ambil semua (reserved boleh ikut keluar karena kita yang reserve)
+                    if ($availableHere <= 0) continue;
+                    $take = min($remaining, $availableHere);
+
+                    // 1. Release reserved untuk batch ini sebesar take (max sebesar reserved yang ada)
+                    $releaseHere = min($take, (float) $bal->reserved_quantity);
+                    if ($releaseHere > 0) {
+                        DB::table('tbs_stock_balances')
+                            ->where('id', $bal->id)
+                            ->update([
+                                'reserved_quantity' => DB::raw('reserved_quantity - ' . $releaseHere),
+                                'last_updated_date' => now(),
+                            ]);
+                    }
+
+                    // 2. Insert StockMovement out_sale per batch (negatif). Trigger DB auto-kurangi quantity.
+                    $docNumber = $this->movements->nextDocNumber('DO');
+                    $this->movements->createMovement([
+                        'movement_number' => $docNumber,
+                        'product_id'      => $product->id,
+                        'warehouse_id'    => $warehouse,
+                        'batch_id'        => $bal->batch_id ? (int) $bal->batch_id : null,
+                        'movement_type'   => StockMovement::TYPE_OUT_SALE,
+                        'reference_type'  => 'DO',
+                        'reference_id'    => $do->id,
+                        'quantity'        => -1 * $take,
+                        'uom_id'          => $doItem->uom_id,
+                        'cost_price'      => (float) $product->default_cost_price,
+                        'notes'           => "DO {$do->do_number}",
+                        'created_by'      => $userId,
+                    ]);
+
+                    $remaining -= $take;
+                }
+
+                if ($remaining > 0.001) {
+                    throw new \RuntimeException(sprintf(
+                        "Stock tidak cukup untuk produk %s. Kurang: %s",
+                        $product->name,
+                        number_format($remaining, 3)
+                    ));
+                }
 
                 // 3. Update SO item delivered_quantity
                 if ($so && $doItem->so_item_id) {
