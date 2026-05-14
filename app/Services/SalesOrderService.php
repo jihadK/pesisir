@@ -124,7 +124,7 @@ class SalesOrderService
                     ->orderByRaw('b.expiry_date IS NULL, b.expiry_date ASC')
                     ->orderBy('sb.id')
                     ->select('sb.id', 'sb.quantity', 'sb.reserved_quantity')
-                    ->lockForUpdate()
+                    ->lock('FOR UPDATE OF sb')  // Postgres: lock hanya tabel utama (sb), bukan nullable join
                     ->get();
 
                 foreach ($balances as $bal) {
@@ -178,7 +178,7 @@ class SalesOrderService
                         ->orderByRaw('b.expiry_date IS NULL, b.expiry_date ASC')
                         ->orderBy('sb.id')
                         ->select('sb.id', 'sb.reserved_quantity')
-                        ->lockForUpdate()
+                        ->lock('FOR UPDATE OF sb')
                         ->get();
 
                     foreach ($balances as $bal) {
