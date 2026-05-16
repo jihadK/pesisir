@@ -90,6 +90,7 @@ class SalesOrderController extends Controller
         return view('sales_orders.show', [
             'so'              => $salesOrder,
             'paymentMethods'  => PaymentMethod::active()->ordered()->get(),
+            'products'        => Product::active()->with('baseUom:id,code')->orderBy('sku')->get(),
         ]);
     }
 
@@ -201,6 +202,54 @@ class SalesOrderController extends Controller
             "SO {$salesOrder->so_number} berhasil dibatalkan.",
             'Cancelled'
         ));
+    }
+
+    public function appendItem(Request $request, SalesOrder $salesOrder): RedirectResponse
+    {
+        if (! $request->user()?->hasPermission('sales_order.update')) {
+            return back()->with('flash', Flash::err('Tidak punya akses tambah item.', ResponseCode::FORBIDDEN));
+        }
+
+        $data = $request->validate([
+            'product_id'   => ['required', 'integer', \Illuminate\Validation\Rule::exists('tbm_products', 'id')->whereNull('deleted_date')],
+            'quantity'     => ['required', 'numeric', 'min:0.001'],
+            'unit_price'   => ['required', 'string'],
+            'discount_pct' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'notes'        => ['nullable', 'string', 'max:255'],
+        ]);
+        // clean rupiah (id-ID format)
+        $data['unit_price'] = (float) preg_replace('/[^0-9]/', '', $data['unit_price']);
+
+        try {
+            $this->service->appendItemToConfirmed($salesOrder, $data);
+        } catch (\Throwable $e) {
+            return back()->with('flash', Flash::err($e->getMessage(), ResponseCode::BUSINESS_RULE_FAILED, 'Gagal Tambah Item'));
+        }
+
+        return back()->with('flash', Flash::ok('Item berhasil ditambahkan ke order.', 'Item Ditambahkan'));
+    }
+
+    public function markPaid(Request $request, SalesOrder $salesOrder): RedirectResponse
+    {
+        if (! $request->user()?->hasPermission('sales_order.mark_paid')) {
+            return back()->with('flash', Flash::err('Tidak punya akses Mark Paid.', ResponseCode::FORBIDDEN));
+        }
+
+        try {
+            $this->service->markAsPaid($salesOrder);
+        } catch (\Throwable $e) {
+            return back()->with('flash', Flash::err($e->getMessage(), ResponseCode::BUSINESS_RULE_FAILED, 'Gagal Mark Paid'));
+        }
+
+        return back()->with('flash', Flash::ok(
+            "Order {$salesOrder->so_number} ditandai sudah dibayar.",
+            'Paid'
+        ));
+    }
+
+    public function publicPrint(SalesOrder $salesOrder): View
+    {
+        return $this->print($salesOrder);
     }
 
     public function print(SalesOrder $salesOrder): View

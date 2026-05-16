@@ -10,13 +10,17 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductGrade;
 use App\Models\UnitOfMeasure;
+use App\Models\Warehouse;
 use App\Services\CategoryService;
 use App\Services\ProductService;
+use App\Services\StockAdjustmentService;
+use App\Services\StockOpeningService;
 use App\Support\Flash;
 use App\Support\ResponseCode;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class ProductController extends Controller
@@ -26,6 +30,8 @@ class ProductController extends Controller
     public function __construct(
         private readonly ProductService $service,
         private readonly CategoryService $categoryService,
+        private readonly StockAdjustmentService $stockAdjustments,
+        private readonly StockOpeningService $stockOpenings,
     ) {}
 
     public function index(Request $request): View
@@ -104,11 +110,42 @@ class ProductController extends Controller
         }
         unset($data['image']);
 
+        // Pisahkan initial_stock dari payload product (bukan kolom DB tbm_products)
+        $initialStock = (int) ($data['initial_stock'] ?? 0);
+        unset($data['initial_stock']);
+
         $product = Product::create($data);
+
+        // Auto-create Stock Opening kalau initial_stock > 0
+        $openingMsg = '';
+        if ($initialStock > 0) {
+            $warehouse = $this->getDefaultWarehouse();
+            if ($warehouse) {
+                try {
+                    $this->stockOpenings->applyOpening([
+                        'warehouse_id' => $warehouse->id,
+                        'notes'        => "Stok awal saat create produk '{$product->name}'",
+                        'created_by'   => $request->user()->id,
+                        'items'        => [[
+                            'product_id' => $product->id,
+                            'quantity'   => $initialStock,
+                            'cost_price' => (float) ($product->default_cost_price ?? 0),
+                        ]],
+                    ]);
+                    $openingMsg = " Stok awal {$initialStock} {$product->baseUom?->code} ter-input di {$warehouse->code}.";
+                } catch (\Throwable $e) {
+                    // Jangan rollback product, cuma flash warning
+                    $openingMsg = " (Stok awal gagal tercatat: {$e->getMessage()})";
+                }
+            }
+        }
 
         return redirect()
             ->route('products.index')
-            ->with('flash', Flash::ok("Produk '{$product->name}' (SKU: {$product->sku}) berhasil ditambahkan.", 'Berhasil Disimpan'));
+            ->with('flash', Flash::ok(
+                "Produk '{$product->name}' (Kode: {$product->sku}) berhasil ditambahkan.{$openingMsg}",
+                'Berhasil Disimpan'
+            ));
     }
 
     public function show(Product $product): View
@@ -217,5 +254,63 @@ class ProductController extends Controller
         } catch (\InvalidArgumentException $e) {
             return $this->failBusinessRule($e->getMessage());
         }
+    }
+
+    /**
+     * Quick stock update dari halaman Daftar Produk.
+     * Direction: 'in' → reason = count_in (Koreksi Lebih, fisik lebih dari sistem)
+     * Direction: 'out' → reason = count_out (Koreksi Kurang, fisik kurang dari sistem)
+     * Warehouse default: WH-LAMONGAN (atau warehouse aktif pertama).
+     */
+    public function updateStock(Request $request, Product $product): RedirectResponse
+    {
+        $data = $request->validate([
+            'direction' => ['required', Rule::in(['in', 'out'])],
+            'quantity'  => ['required', 'numeric', 'min:0.001'],
+            'notes'     => ['required', 'string', 'min:5', 'max:500'],
+        ]);
+
+        $warehouse = $this->getDefaultWarehouse();
+        if (! $warehouse) {
+            return back()->with('flash', Flash::err('Tidak ada warehouse aktif.', ResponseCode::BUSINESS_RULE_FAILED));
+        }
+
+        // Mapping reason sesuai konvensi standar opname:
+        // Tambah (fisik > sistem) → count_in (Koreksi Lebih)
+        // Kurang (fisik < sistem) → count_out (Koreksi Kurang)
+        $reason = $data['direction'] === 'in' ? 'count_in' : 'count_out';
+
+        try {
+            $movement = $this->stockAdjustments->applyAdjustment([
+                'warehouse_id' => $warehouse->id,
+                'product_id'   => $product->id,
+                'batch_id'     => null,
+                'direction'    => $data['direction'],
+                'reason'       => $reason,
+                'quantity'     => $data['quantity'],
+                'notes'        => $data['notes'],
+                'created_by'   => $request->user()->id,
+            ]);
+        } catch (\Throwable $e) {
+            return back()->with('flash', Flash::err($e->getMessage(), ResponseCode::BUSINESS_RULE_FAILED, 'Gagal Update Stok'));
+        }
+
+        $label = $data['direction'] === 'in' ? 'ditambah' : 'dikurangi';
+        return back()->with('flash', Flash::ok(
+            "Stok '{$product->name}' berhasil {$label} ({$movement->movement_number}).",
+            'Berhasil'
+        ));
+    }
+
+    /**
+     * Helper: cari warehouse default = WH-LAMONGAN.
+     * Fallback: warehouse aktif pertama by code.
+     */
+    private function getDefaultWarehouse(): ?Warehouse
+    {
+        return Warehouse::where('is_active', true)
+            ->where('code', 'WH-LAMONGAN')
+            ->first()
+            ?: Warehouse::where('is_active', true)->orderBy('code')->first();
     }
 }

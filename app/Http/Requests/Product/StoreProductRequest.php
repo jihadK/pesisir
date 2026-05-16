@@ -46,6 +46,8 @@ class StoreProductRequest extends FormRequest
 
             'image'            => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'is_active'        => ['nullable', 'boolean'],
+
+            'initial_stock'    => ['nullable', 'integer', 'min:0'],
         ];
     }
 

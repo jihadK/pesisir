@@ -14,13 +14,14 @@ class PurchaseOrderItem extends Model
 
     protected $fillable = [
         'po_id', 'category_id',
-        'qty_gram', 'price_per_kg', 'subtotal', 'notes',
+        'qty_gram', 'price_per_kg', 'discount_amount', 'subtotal', 'notes',
     ];
 
     protected $casts = [
-        'qty_gram'     => 'decimal:2',
-        'price_per_kg' => 'decimal:2',
-        'subtotal'     => 'decimal:2',
+        'qty_gram'        => 'decimal:2',
+        'price_per_kg'    => 'decimal:2',
+        'discount_amount' => 'decimal:2',
+        'subtotal'        => 'decimal:2',
     ];
 
     public function purchaseOrder(): BelongsTo { return $this->belongsTo(PurchaseOrder::class, 'po_id'); }

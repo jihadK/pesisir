@@ -25,38 +25,31 @@
                     </div>
                 </div>
 
-                <div class="row mb-5">
-                    <label class="col-form-label col-md-3 fw-semibold required">Grade</label>
-                    <div class="col-md-9">
-                        <select name="grade_id" id="prod_grade" class="form-select form-select-solid @error('grade_id') is-invalid @enderror"
-                                data-control="select2" data-placeholder="Pilih grade..." required>
-                            <option value=""></option>
-                            @foreach($grades as $g)
-                                <option value="{{ $g->id }}" @selected(old('grade_id', $product->grade_id)==$g->id)>{{ $g->code }} — {{ $g->name }}</option>
-                            @endforeach
-                        </select>
-                        @error('grade_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                        <div class="form-text">Dipakai sebagai segmen ke-3 SKU (contoh A, B, C).</div>
-                    </div>
-                </div>
+                @php
+                    // Default Grade = B (Standard). Cari ID-nya, fallback ke grade pertama.
+                    $defaultGradeId = $grades->firstWhere('code', 'B')?->id ?? $grades->first()?->id;
+                    $selectedGradeId = old('grade_id', $product->grade_id ?? $defaultGradeId);
+                @endphp
+                {{-- Grade di-hide, default B-Standard. Tetap di-submit untuk SKU generator. --}}
+                <input type="hidden" name="grade_id" id="prod_grade" value="{{ $selectedGradeId }}" />
 
                 <div class="row mb-5">
-                    <label class="col-form-label col-md-3 fw-semibold required">SKU</label>
+                    <label class="col-form-label col-md-3 fw-semibold required">Kode Produk</label>
                     <div class="col-md-9">
                         <div class="d-flex gap-2">
                             <input type="text" name="sku" id="prod_sku"
                                    value="{{ old('sku', $product->sku) }}"
                                    class="form-control form-control-solid text-uppercase @error('sku') is-invalid @enderror"
-                                   placeholder="FISH-TUNA-A-001" maxlength="50"
+                                   placeholder="FISH-TUNA-B-001" maxlength="50"
                                    {{ $isEdit ? 'readonly' : 'readonly required' }} />
                             @if(! $isEdit)
-                                <button type="button" id="btn_suggest_sku" class="btn btn-light-info" title="Generate SKU dari Sub-Kategori + Grade">
+                                <button type="button" id="btn_suggest_sku" class="btn btn-light-info" title="Generate Kode Produk dari Sub-Kategori">
                                     <i class="ki-outline ki-magic-stick fs-3"></i> Generate
                                 </button>
                             @endif
                         </div>
                         @error('sku')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
-                        <div class="form-text">{{ $isEdit ? 'SKU tidak bisa diubah.' : 'Pilih sub-kategori &amp; grade dulu, lalu klik Generate.' }}</div>
+                        <div class="form-text">{{ $isEdit ? 'Kode produk tidak bisa diubah.' : 'Pilih sub-kategori dulu, lalu klik Generate.' }}</div>
                     </div>
                 </div>
 
@@ -214,51 +207,38 @@
             </div>
         </div>
 
-        {{-- ===== Section 3: Penyimpanan & Kualitas ===== --}}
-        <div class="card mb-5">
-            <div class="card-header"><h3 class="card-title">Penyimpanan &amp; Kualitas</h3></div>
-            <div class="card-body">
-                {{-- Suhu Penyimpanan: hide UI, set default -25 / -18 (frozen storage range) --}}
-                <input type="hidden" name="storage_temp_min" value="{{ old('storage_temp_min', $product->storage_temp_min ?? -25) }}" />
-                <input type="hidden" name="storage_temp_max" value="{{ old('storage_temp_max', $product->storage_temp_max ?? -18) }}" />
-
-                <div class="row mb-5">
-                    <label class="col-form-label col-md-3 fw-semibold">Umur Simpan (hari)</label>
-                    <div class="col-md-3">
-                        <input type="number" name="shelf_life_days" value="{{ old('shelf_life_days', $product->shelf_life_days) }}"
-                               class="form-control form-control-solid @error('shelf_life_days') is-invalid @enderror"
-                               min="0" max="3650" placeholder="30" />
-                        @error('shelf_life_days')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
-                </div>
-
-                <div class="row mb-5">
-                    <label class="col-form-label col-md-3 fw-semibold">Mudah Rusak (Perishable)</label>
-                    <div class="col-md-9">
-                        <div class="form-check form-switch form-check-custom form-check-solid">
-                            <input class="form-check-input" type="checkbox" name="is_perishable" value="1" id="is_perishable_switch"
-                                   @checked(old('is_perishable', $product->is_perishable ?? true)) />
-                            <label class="form-check-label fw-semibold ms-3" for="is_perishable_switch">Ya, produk perishable</label>
-                        </div>
-                        <div class="form-text">Produk perishable wajib pakai batch tracking & FEFO picking.</div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        {{-- ===== Section 3: Penyimpanan & Kualitas — HIDDEN dengan default values ===== --}}
+        <input type="hidden" name="storage_temp_min" value="{{ old('storage_temp_min', $product->storage_temp_min ?? -25) }}" />
+        <input type="hidden" name="storage_temp_max" value="{{ old('storage_temp_max', $product->storage_temp_max ?? -18) }}" />
+        <input type="hidden" name="shelf_life_days"  value="{{ old('shelf_life_days', $product->shelf_life_days ?? 60) }}" />
+        <input type="hidden" name="is_perishable"    value="1" />
 
         {{-- ===== Section 4: Stock Level ===== --}}
         <div class="card mb-5">
-            <div class="card-header"><h3 class="card-title">Stock Level (Reorder Point)</h3></div>
+            <div class="card-header"><h3 class="card-title">Stok</h3></div>
             <div class="card-body">
+                @if(! $isEdit)
+                    {{-- Stok Awal: hanya saat Create Produk --}}
+                    <div class="row mb-5">
+                        <label class="col-form-label col-md-3 fw-semibold">Stok Awal</label>
+                        <div class="col-md-3">
+                            <input type="number" step="1" name="initial_stock" value="{{ old('initial_stock', 0) }}"
+                                   class="form-control form-control-solid @error('initial_stock') is-invalid @enderror" min="0" placeholder="0" />
+                            @error('initial_stock')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            <div class="form-text fs-8">Qty awal yang sudah ada di gudang (opsional). Akan dicatat sebagai Stock Opening.</div>
+                        </div>
+                    </div>
+                @endif
+
                 <div class="row mb-5">
-                    <label class="col-form-label col-md-3 fw-semibold">Stock Minimum</label>
+                    <label class="col-form-label col-md-3 fw-semibold">Stok Minimum</label>
                     <div class="col-md-3">
                         <input type="number" step="1" name="min_stock_level" value="{{ old('min_stock_level', (int) $product->min_stock_level) }}"
                                class="form-control form-control-solid @error('min_stock_level') is-invalid @enderror" min="0" placeholder="0" />
                         @error('min_stock_level')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                        <div class="form-text">Alert kalau stock total &lt; nilai ini.</div>
+                        <div class="form-text">Alert kalau stok total &lt; nilai ini.</div>
                     </div>
-                    <label class="col-form-label col-md-3 fw-semibold">Stock Maximum</label>
+                    <label class="col-form-label col-md-3 fw-semibold">Stok Maksimum</label>
                     <div class="col-md-3">
                         <input type="number" step="1" name="max_stock_level" value="{{ old('max_stock_level', $product->max_stock_level ? (int) $product->max_stock_level : '') }}"
                                class="form-control form-control-solid @error('max_stock_level') is-invalid @enderror" min="0" placeholder="(opsional)" />
@@ -573,8 +553,8 @@ document.addEventListener('DOMContentLoaded', function () {
         btnSku.addEventListener('click', function () {
             var catId = document.getElementById('prod_category').value;
             var grdId = document.getElementById('prod_grade').value;
-            if (! catId || ! grdId) {
-                Swal.fire({ icon:'info', title:'Lengkapi data dulu', text:'Pilih sub-kategori dan grade dulu sebelum generate SKU.',
+            if (! catId) {
+                Swal.fire({ icon:'info', title:'Pilih Sub-Kategori dulu', text:'Sub-kategori wajib dipilih sebelum generate kode produk.',
                     confirmButtonText:'OK', customClass:{confirmButton:'btn btn-info'}, buttonsStyling:false });
                 return;
             }

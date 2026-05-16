@@ -35,7 +35,10 @@ class StoreCleaningServiceRequest extends FormRequest
     private function cleanNumber(mixed $val): ?float
     {
         if ($val === null || $val === '') return null;
-        $s = preg_replace('/[^0-9.]/', '', (string) $val);
+        $s = (string) $val;
+        $s = str_replace('.', '', $s);   // strip thousand separator id-ID
+        $s = str_replace(',', '.', $s);  // decimal id-ID → standard
+        $s = preg_replace('/[^0-9.]/', '', $s);
         return $s === '' ? null : (float) $s;
     }
 }

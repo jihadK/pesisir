@@ -24,8 +24,9 @@ class StorePurchaseOrderRequest extends FormRequest
             'items'                  => ['required', 'array', 'min:1'],
             'items.*.category_id'    => ['required', 'integer', Rule::exists('tbm_categories', 'id')],
             'items.*.qty_gram'       => ['required', 'numeric', 'min:1'],
-            'items.*.price_per_kg'   => ['required', 'numeric', 'min:0'],
-            'items.*.notes'          => ['nullable', 'string', 'max:255'],
+            'items.*.price_per_kg'    => ['required', 'numeric', 'min:0'],
+            'items.*.discount_amount' => ['nullable', 'numeric', 'min:0'],
+            'items.*.notes'           => ['nullable', 'string', 'max:255'],
 
             'costs'                  => ['nullable', 'array'],
             'costs.*.cost_type'      => ['required_with:costs', Rule::in(['cleaning', 'other'])],
@@ -55,8 +56,9 @@ class StorePurchaseOrderRequest extends FormRequest
         if (is_array($items)) {
             foreach ($items as $idx => $row) {
                 if (! is_array($row)) continue;
-                if (isset($row['qty_gram']))     $items[$idx]['qty_gram']     = $this->cleanNumber($row['qty_gram']);
-                if (isset($row['price_per_kg'])) $items[$idx]['price_per_kg'] = $this->cleanNumber($row['price_per_kg']);
+                if (isset($row['qty_gram']))        $items[$idx]['qty_gram']        = $this->cleanNumber($row['qty_gram']);
+                if (isset($row['price_per_kg']))    $items[$idx]['price_per_kg']    = $this->cleanNumber($row['price_per_kg']);
+                if (isset($row['discount_amount'])) $items[$idx]['discount_amount'] = $this->cleanNumber($row['discount_amount']) ?? 0;
                 if (empty($row['category_id']) || empty($items[$idx]['qty_gram'])) unset($items[$idx]);
             }
             $this->merge(['items' => array_values($items)]);
@@ -74,10 +76,21 @@ class StorePurchaseOrderRequest extends FormRequest
         }
     }
 
+    /**
+     * Bersihkan input angka format id-ID (dot = thousand separator, comma = decimal point).
+     * Contoh: "3.100" → 3100, "3.100,5" → 3100.5
+     * Bug sebelumnya: regex keep '.' jadi "3.100" diparse sebagai 3.1 (PHP float).
+     */
     private function cleanNumber(mixed $val): ?float
     {
         if ($val === null || $val === '') return null;
-        $s = preg_replace('/[^0-9.]/', '', (string) $val);
+        $s = (string) $val;
+        // Strip dots (thousand separator id-ID)
+        $s = str_replace('.', '', $s);
+        // Convert comma (decimal id-ID) ke titik (decimal standard)
+        $s = str_replace(',', '.', $s);
+        // Strip karakter selain digit & dot
+        $s = preg_replace('/[^0-9.]/', '', $s);
         return $s === '' ? null : (float) $s;
     }
 }

@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Proforma {{ $so->so_number }}</title>
+    <title>{{ $so->isPaid() ? 'Invoice' : 'Proforma' }} {{ $so->so_number }}</title>
     <style>
         * { box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; color: #222; margin: 0; padding: 24px; max-width: 720px; margin-left:auto; margin-right:auto; font-size: 13px; }
@@ -32,6 +32,29 @@
         .pm-item .pm-detail { font-size: 12px; color: #555; }
         .qris-img { max-width: 140px; display: block; margin: 6px 0; }
         .footer-note { margin-top: 20px; padding: 12px; text-align: center; color: #777; font-size: 11px; border-top: 1px dashed #ddd; }
+        .signoff { margin-top: 24px; font-size: 12px; }
+        .signoff .label { color:#555; }
+        .signoff .brand { font-weight: bold; color: #1976d2; margin-top: 28px; }
+        .lunas-stamp {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-18deg);
+            border: 5px double #2e7d32;
+            color: #2e7d32;
+            padding: 10px 40px;
+            font-weight: bold;
+            font-size: 56px;
+            letter-spacing: 10px;
+            opacity: 0.55;
+            background: rgba(232, 245, 233, 0.25);
+            border-radius: 8px;
+            text-transform: uppercase;
+            pointer-events: none;
+            z-index: 5;
+            white-space: nowrap;
+        }
+        body { position: relative; }
         @media print {
             body { padding: 0; }
             .no-print { display: none !important; }
@@ -48,6 +71,9 @@
 </head>
 <body>
 
+@php $isCustomerView = request()->routeIs('sales_orders.public-print'); @endphp
+
+@if(! $isCustomerView)
 <div class="toolbar no-print">
     @php
         // Normalize Indonesian phone: strip non-digits, leading 0 → 62, leading +62 → 62
@@ -60,36 +86,67 @@
             else $waPhone = '62' . $digitsOnly;
         }
 
-        // Build pre-filled message
+        // Detect QR / Bank from chosen payment method
+        $pm = $so->paymentMethod;
+        $isQris = $pm && ($pm->qris_image_url || stripos($pm->name, 'qr') !== false);
+        $isBank = $pm && $pm->type === \App\Models\PaymentMethod::TYPE_TRANSFER;
+
+        // Document link (Proforma sebelum paid, Invoice sesudah)
+        $docLabel = $so->isPaid() ? 'Invoice' : 'Proforma';
+        // Public signed URL — customer bisa buka tanpa login, anti-tebak (HMAC), no expiry
+        $docUrl = \Illuminate\Support\Facades\URL::signedRoute('sales_orders.public-print', ['salesOrder' => $so->id]);
+        $qrisUrl = $pm && $pm->qris_image_url ? $pm->qris_image_display_url : null;
+
+        // Build WA message sesuai format UAT
         $lines = [];
-        $lines[] = "Halo Bapak/Ibu *{$so->customer->name}* 🙏";
+        $lines[] = "Halo Bapak/Ibu {$so->customer->name} 🙏";
         $lines[] = "";
         $lines[] = "Terima kasih atas pesanan Anda. Berikut detail tagihan:";
         $lines[] = "";
-        $lines[] = "*No. Order:* {$so->so_number}";
-        $lines[] = "*Tanggal:* " . $so->order_date->format('d M Y');
+        $lines[] = "No. Order: {$so->so_number}";
+        $lines[] = "Tanggal: " . $so->order_date->format('d M Y');
         $lines[] = "";
-        $lines[] = "*Items:*";
+        $lines[] = "Items:";
         foreach ($so->items as $it) {
             $q = (float) $it->quantity;
             $qF = floor($q) == $q ? number_format($q, 0, ',', '.') : number_format($q, 3, ',', '.');
-            $lines[] = "• {$it->product->name} — {$qF} {$it->uom->code} × Rp " . number_format((float)$it->unit_price, 0, ',', '.');
+            $lines[] = "* {$it->product->name} — {$qF} {$it->uom->code} × Rp " . number_format((float)$it->unit_price, 0, ',', '.');
         }
         $lines[] = "";
-        $lines[] = "*TOTAL: Rp " . number_format((float)$so->total_amount, 0, ',', '.') . "*";
+        $lines[] = "TOTAL: Rp " . number_format((float)$so->total_amount, 0, ',', '.');
         $lines[] = "";
-        if ($so->paymentMethod) {
-            $pm = $so->paymentMethod;
-            $lines[] = "*Pembayaran:* {$pm->name}";
-            if ($pm->bank_name && $pm->account_no) {
-                $lines[] = "{$pm->bank_name} {$pm->account_no} a.n. {$pm->account_holder}";
+        if ($isQris) {
+            $lines[] = "Pembayaran: QRIS";
+            $lines[] = "";
+            if ($qrisUrl) {
+                $lines[] = "Gambar QRIS dapat langsung diunduh di sini: {$qrisUrl}";
+            } else {
+                $lines[] = "Gambar QRIS dapat dilihat pada link kuitansi di bawah.";
             }
+        } elseif ($isBank) {
+            $lines[] = "Pembayaran: Transfer Bank";
+            $lines[] = "";
+            $lines[] = "Mohon transfer ke rekening berikut:";
+            $lines[] = "{$pm->bank_name} {$pm->account_no}";
+            $lines[] = "a.n. {$pm->account_holder}";
         } else {
-            $lines[] = "Pembayaran bisa via Transfer Bank / QRIS / COD (lihat detail di PDF).";
+            $lines[] = "Pembayaran: Belum ditentukan";
+            $lines[] = "";
+            if ($qrisUrl) {
+                $lines[] = "Bisa via QRIS — unduh gambarnya di sini: {$qrisUrl}";
+            } else {
+                $lines[] = "Disarankan membawa uang pas saat pengambilan.";
+            }
         }
         $lines[] = "";
-        $lines[] = "Detail lengkap & info rekening saya kirim via PDF ya 📎";
-        $lines[] = "Mohon konfirmasi setelah pembayaran. Terima kasih 🙏";
+        $lines[] = "Kuitansi tagihan dapat dilihat pada link berikut: {$docUrl}";
+        $lines[] = "";
+        $lines[] = $so->isPaid()
+            ? "Terima kasih atas pembayaran Anda. Invoice resmi terlampir di link di atas 🙏"
+            : "Mohon konfirmasi setelah pembayaran, invoice akan dikirimkan setelah konfirmasi pembayaran. Terima kasih 🙏";
+        $lines[] = "";
+        $lines[] = "Love,";
+        $lines[] = "Pesisir Fresh Fish";
 
         $waMessage = rawurlencode(implode("\n", $lines));
         $waUrl = $waPhone ? "https://wa.me/{$waPhone}?text={$waMessage}" : "https://wa.me/?text={$waMessage}";
@@ -111,6 +168,7 @@
     <button class="btn" onclick="window.print()">🖨️ Print / Save as PDF</button>
     <a href="{{ route('sales_orders.show', $so) }}" class="btn" style="background:#666">← Kembali</a>
 </div>
+@endif
 
 <!-- html2canvas dari CDN, load di-defer agar tidak block render -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
@@ -154,13 +212,17 @@ function downloadAsImage() {
 }
 </script>
 
+@if($so->isPaid())
+    <div class="lunas-stamp">LUNAS</div>
+@endif
+
 <div class="header">
     <div class="brand">
         <img src="{{ asset('storage/logo/logo-pesisir-web.png') }}" alt="Logo" onerror="this.style.display='none'" />
         <div>
             <h1>{{ config('app.name', 'Pesisir Fresh Fish') }}</h1>
             <div class="tagline">Ikan Segar dari Laut Pesisir</div>
-            <div class="tagline">Tagihan / Proforma Invoice</div>
+            <div class="tagline">{{ $so->isPaid() ? 'INVOICE (Lunas)' : 'Tagihan / Proforma Invoice' }}</div>
         </div>
     </div>
     <div class="doc-info">
@@ -182,9 +244,8 @@ function downloadAsImage() {
     </div>
     <div>
         <h3>Detail</h3>
-        <div>Warehouse: <strong>{{ $so->warehouse->name }}</strong></div>
-        <div>Term: <strong>{{ $so->payment_terms_days }} hari</strong></div>
         <div>Status: <strong>{{ $so->status_label }}</strong></div>
+        @if($so->delivery_date)<div>Tgl Kirim: <strong>{{ $so->delivery_date->format('d M Y') }}</strong></div>@endif
     </div>
 </div>
 
@@ -226,34 +287,13 @@ function downloadAsImage() {
     @if((float)$so->shipping_cost > 0)
         <tr><td>Ongkir</td><td class="text-end">Rp {{ number_format((float)$so->shipping_cost, 0, ',', '.') }}</td></tr>
     @endif
+    @if((float)$so->packing_cost > 0)
+        <tr><td>Biaya Packing</td><td class="text-end">Rp {{ number_format((float)$so->packing_cost, 0, ',', '.') }}</td></tr>
+    @endif
     <tr class="total-row"><td>TOTAL</td><td class="text-end">Rp {{ number_format((float)$so->total_amount, 0, ',', '.') }}</td></tr>
 </table>
 
-@if($paymentMethods->isNotEmpty())
-<div class="payment-section">
-    <h3>💳 Cara Pembayaran</h3>
-    <div class="pm-list">
-        @foreach($paymentMethods as $pm)
-            @php $isChosen = $so->payment_method_id == $pm->id; @endphp
-            <div class="pm-item {{ $isChosen ? 'pm-chosen' : '' }}">
-                <div class="pm-name">
-                    {{ $pm->name }}
-                    @if($isChosen)<span class="pm-chosen-tag">✓ PILIHAN ANDA</span>@endif
-                </div>
-                @if($pm->bank_name || $pm->account_no)
-                    <div class="pm-detail">{{ $pm->bank_name }} {{ $pm->account_no }} a.n. <strong>{{ $pm->account_holder }}</strong></div>
-                @endif
-                @if($pm->qris_image_display_url)
-                    <img class="qris-img" src="{{ $pm->qris_image_display_url }}" alt="QRIS" />
-                @endif
-                @if($pm->description)
-                    <div class="pm-detail">{{ $pm->description }}</div>
-                @endif
-            </div>
-        @endforeach
-    </div>
-</div>
-@endif
+{{-- Informasi pembayaran sengaja di-hide; sudah dicantumkan di pesan WhatsApp. --}}
 
 @if($so->notes)
     <div style="margin-top:16px;padding:10px;background:#f5f5f5;border-radius:4px;font-size:12px">
@@ -261,9 +301,18 @@ function downloadAsImage() {
     </div>
 @endif
 
+<div class="signoff">
+    <div class="label">Hormat kami,</div>
+    <div class="brand">Pesisir Fresh Fish</div>
+</div>
+
 <div class="footer-note">
-    Mohon konfirmasi pembayaran setelah transfer.<br>
-    Terima kasih atas pesanan Anda 🙏
+    @if($so->isPaid())
+        Terima kasih atas pembayaran Anda 🙏
+    @else
+        Mohon konfirmasi pembayaran setelah transfer.<br>
+        Terima kasih atas pesanan Anda 🙏
+    @endif
 </div>
 
 </body>

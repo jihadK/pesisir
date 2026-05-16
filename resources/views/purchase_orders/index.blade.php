@@ -55,12 +55,11 @@
                 <thead>
                     <tr class="fw-bold text-muted bg-light">
                         <th class="ps-4">Tanggal</th>
-                        <th>No. PO</th>
+                        <th>No. Belanja</th>
                         <th>Supplier</th>
-                        <th>Warehouse</th>
                         <th class="text-center">Status</th>
                         <th class="text-end">Total</th>
-                        <th>Expected</th>
+                        <th>Rencana Belanja</th>
                         <th class="text-end pe-4">Aksi</th>
                     </tr>
                 </thead>
@@ -73,7 +72,6 @@
                             <div class="fw-bold">{{ $o->supplier->name }}</div>
                             <div class="text-muted fs-8">{{ $o->supplier->code }}</div>
                         </td>
-                        <td class="fs-7">{{ $o->warehouse->code }}</td>
                         <td class="text-center"><span class="badge {{ $o->status_badge }} fs-7">{{ $o->status_label }}</span></td>
                         <td class="text-end fw-bold">{{ number_format((float)$o->total_amount, 0, ',', '.') }}</td>
                         <td class="fs-7">{{ $o->expected_date?->format('d M Y') ?? '—' }}</td>
@@ -82,7 +80,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="8" class="text-center text-muted py-10">Belum ada PO.</td></tr>
+                    <tr><td colspan="7" class="text-center text-muted py-10">Belum ada Belanja.</td></tr>
                 @endforelse
                 </tbody>
             </table>

@@ -85,20 +85,35 @@ class PurchaseOrderService
         return $po;
     }
 
+    /**
+     * Tandai PO sebagai sudah dibayar (paid).
+     */
+    public function markAsPaid(PurchaseOrder $po): PurchaseOrder
+    {
+        if (! $po->isMarkPaidable()) {
+            throw new \RuntimeException("PO ini tidak bisa ditandai Terbayar pada status: {$po->status_label}.");
+        }
+        $po->update(['status' => PurchaseOrder::STATUS_PAID]);
+        return $po;
+    }
+
     private function saveItems(PurchaseOrder $po, array $items): void
     {
         foreach ($items as $row) {
             $qtyGram    = (float) $row['qty_gram'];
             $pricePerKg = (float) $row['price_per_kg'];
-            $subtotal   = round($qtyGram * $pricePerKg / 1000, 2);
+            $discount   = (float) ($row['discount_amount'] ?? 0);
+            $gross      = $qtyGram * $pricePerKg / 1000;
+            $subtotal   = round(max(0, $gross - $discount), 2);
 
             PurchaseOrderItem::create([
-                'po_id'        => $po->id,
-                'category_id'  => $row['category_id'],
-                'qty_gram'     => $qtyGram,
-                'price_per_kg' => $pricePerKg,
-                'subtotal'     => $subtotal,
-                'notes'        => $row['notes'] ?? null,
+                'po_id'           => $po->id,
+                'category_id'     => $row['category_id'],
+                'qty_gram'        => $qtyGram,
+                'price_per_kg'    => $pricePerKg,
+                'discount_amount' => $discount,
+                'subtotal'        => $subtotal,
+                'notes'           => $row['notes'] ?? null,
             ]);
         }
     }

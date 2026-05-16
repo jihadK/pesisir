@@ -50,7 +50,7 @@
                 <div data-kt-menu-trigger="click" class="menu-item menu-accordion {{ request()->routeIs('uoms.*','grades.*','price_tiers.*','categories.*','products.*') ? 'here show' : '' }}">
                     <span class="menu-link">
                         <span class="menu-icon"><i class="ki-outline ki-package fs-2"></i></span>
-                        <span class="menu-title">Produk</span>
+                        <span class="menu-title">Produk &amp; Stok</span>
                         <span class="menu-arrow"></span>
                     </span>
                     <div class="menu-sub menu-sub-accordion menu-active-bg">
@@ -181,7 +181,7 @@
                         <div class="menu-item">
                             <a class="menu-link {{ request()->routeIs('purchase_orders.*') ? 'active' : '' }}" href="{{ route('purchase_orders.index') }}">
                                 <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
-                                <span class="menu-title">Purchase Order</span>
+                                <span class="menu-title">Belanja</span>
                             </a>
                         </div>
                         @endif
@@ -197,7 +197,7 @@
                         <div class="menu-item">
                             <a class="menu-link {{ request()->routeIs('supplies_purchases.*') ? 'active' : '' }}" href="{{ route('supplies_purchases.index') }}">
                                 <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
-                                <span class="menu-title">Pembelian Lain-lain</span>
+                                <span class="menu-title">Belanja Lain-lain</span>
                             </a>
                         </div>
                         @endif
@@ -246,18 +246,27 @@
                     </div>
                 </div>
 
+                @php
+                    $isPaidView = request()->routeIs('sales_orders.index') && request('status') === 'paid';
+                @endphp
                 <div data-kt-menu-trigger="click" class="menu-item menu-accordion {{ request()->routeIs('sales_orders.*','delivery_orders.*') ? 'here show' : '' }}">
                     <span class="menu-link">
                         <span class="menu-icon"><i class="ki-outline ki-basket fs-2"></i></span>
-                        <span class="menu-title">Sales</span>
+                        <span class="menu-title">Penjualan</span>
                         <span class="menu-arrow"></span>
                     </span>
                     <div class="menu-sub menu-sub-accordion menu-active-bg">
                         @if(auth()->user()?->hasPermission('sales_order.view'))
                         <div class="menu-item">
-                            <a class="menu-link {{ request()->routeIs('sales_orders.*') ? 'active' : '' }}" href="{{ route('sales_orders.index') }}">
+                            <a class="menu-link {{ request()->routeIs('sales_orders.*') && ! $isPaidView ? 'active' : '' }}" href="{{ route('sales_orders.index') }}">
                                 <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
-                                <span class="menu-title">Sales Order</span>
+                                <span class="menu-title">Booking Order</span>
+                            </a>
+                        </div>
+                        <div class="menu-item">
+                            <a class="menu-link {{ $isPaidView ? 'active' : '' }}" href="{{ route('sales_orders.index', ['status' => 'paid']) }}">
+                                <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
+                                <span class="menu-title">Daftar Invoice</span>
                             </a>
                         </div>
                         @endif

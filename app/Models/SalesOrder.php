@@ -15,12 +15,13 @@ class SalesOrder extends BaseModel
     public const STATUS_PARTIAL   = 'partial';
     public const STATUS_DELIVERED = 'delivered';
     public const STATUS_INVOICED  = 'invoiced';
+    public const STATUS_PAID      = 'paid';
     public const STATUS_CANCELLED = 'cancelled';
 
     protected $fillable = [
         'so_number', 'customer_id', 'sales_user_id', 'warehouse_id',
         'order_date', 'delivery_date', 'status',
-        'subtotal', 'discount_amount', 'tax_amount', 'shipping_cost', 'total_amount',
+        'subtotal', 'discount_amount', 'tax_amount', 'shipping_cost', 'packing_cost', 'total_amount',
         'payment_terms_days', 'payment_method_id', 'notes', 'created_by', 'approved_by',
     ];
 
@@ -31,6 +32,7 @@ class SalesOrder extends BaseModel
         'discount_amount'    => 'decimal:2',
         'tax_amount'         => 'decimal:2',
         'shipping_cost'      => 'decimal:2',
+        'packing_cost'       => 'decimal:2',
         'total_amount'       => 'decimal:2',
         'payment_terms_days' => 'integer',
     ];
@@ -71,6 +73,7 @@ class SalesOrder extends BaseModel
             self::STATUS_PARTIAL   => 'Partial Delivered',
             self::STATUS_DELIVERED => 'Delivered',
             self::STATUS_INVOICED  => 'Invoiced',
+            self::STATUS_PAID      => 'Paid',
             self::STATUS_CANCELLED => 'Cancelled',
         ];
     }
@@ -88,6 +91,7 @@ class SalesOrder extends BaseModel
             self::STATUS_PARTIAL   => 'badge-light-warning',
             self::STATUS_DELIVERED => 'badge-light-info',
             self::STATUS_INVOICED  => 'badge-light-success',
+            self::STATUS_PAID      => 'badge-light-success',
             self::STATUS_CANCELLED => 'badge-light-danger',
             default                => 'badge-light',
         };
@@ -106,5 +110,15 @@ class SalesOrder extends BaseModel
     public function isCancellable(): bool
     {
         return in_array($this->status, [self::STATUS_DRAFT, self::STATUS_CONFIRMED], true);
+    }
+
+    public function isMarkPaidable(): bool
+    {
+        return in_array($this->status, [self::STATUS_DRAFT, self::STATUS_CONFIRMED, self::STATUS_PARTIAL, self::STATUS_DELIVERED, self::STATUS_INVOICED], true);
+    }
+
+    public function isPaid(): bool
+    {
+        return $this->status === self::STATUS_PAID;
     }
 }

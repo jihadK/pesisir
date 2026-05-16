@@ -41,6 +41,7 @@ class SalesOrderService
                 'payment_terms_days' => $payload['payment_terms_days'] ?? 0,
                 'payment_method_id'  => $payload['payment_method_id'] ?? null,
                 'shipping_cost'      => $payload['shipping_cost'] ?? 0,
+                'packing_cost'       => $payload['packing_cost'] ?? 0,
                 'discount_amount'    => $payload['discount_amount'] ?? 0,
                 'tax_amount'         => 0,
                 'notes'              => $payload['notes'] ?? null,
@@ -73,6 +74,7 @@ class SalesOrderService
                 'payment_terms_days' => $payload['payment_terms_days'] ?? 0,
                 'payment_method_id'  => $payload['payment_method_id'] ?? null,
                 'shipping_cost'      => $payload['shipping_cost'] ?? 0,
+                'packing_cost'       => $payload['packing_cost'] ?? 0,
                 'discount_amount'    => $payload['discount_amount'] ?? 0,
                 'notes'              => $payload['notes'] ?? null,
             ]);
@@ -234,12 +236,97 @@ class SalesOrderService
         $disc     = (float) $so->discount_amount;
         $tax      = (float) $so->tax_amount;
         $shipping = (float) $so->shipping_cost;
-        $total    = max(0, $subtotal - $disc + $tax + $shipping);
+        $packing  = (float) $so->packing_cost;
+        $total    = max(0, $subtotal - $disc + $tax + $shipping + $packing);
 
         $so->update([
             'subtotal'     => $subtotal,
             'total_amount' => $total,
         ]);
+    }
+
+    /**
+     * Tambah 1 item ke SO yang sudah Confirmed. Reserve stock untuk qty baru,
+     * rebuild totals. Tidak menyentuh item/reservasi yang sudah ada.
+     */
+    public function appendItemToConfirmed(SalesOrder $so, array $row): SalesOrderItem
+    {
+        if (! in_array($so->status, [SalesOrder::STATUS_CONFIRMED, SalesOrder::STATUS_PARTIAL], true)) {
+            throw new \RuntimeException("Tambah item hanya bisa di SO status Confirmed/Partial.");
+        }
+
+        return DB::transaction(function () use ($so, $row) {
+            $product = Product::with('baseUom')->findOrFail($row['product_id']);
+            $qty     = (float) $row['quantity'];
+            $price   = (float) ($row['unit_price'] ?? $product->default_sell_price);
+            $discPct = (float) ($row['discount_pct'] ?? 0);
+            $discAmt = round($qty * $price * $discPct / 100, 2);
+            $subtot  = round($qty * $price - $discAmt, 2);
+
+            // 1) Cek stok available di warehouse SO
+            $available = $this->getAvailable((int) $product->id, (int) $so->warehouse_id);
+            if ($qty > $available) {
+                throw new \RuntimeException(sprintf(
+                    "Stock tidak cukup untuk produk %s. Tersedia: %s, dibutuhkan: %s.",
+                    $product->sku, number_format($available, 3), number_format($qty, 3)
+                ));
+            }
+
+            // 2) Reserve qty FEFO
+            $remaining = $qty;
+            $balances = DB::table('tbs_stock_balances as sb')
+                ->leftJoin('tbm_product_batches as b', 'b.id', '=', 'sb.batch_id')
+                ->where('sb.product_id', $product->id)
+                ->where('sb.warehouse_id', $so->warehouse_id)
+                ->where('sb.quantity', '>', DB::raw('sb.reserved_quantity'))
+                ->orderByRaw('b.expiry_date IS NULL, b.expiry_date ASC')
+                ->orderBy('sb.id')
+                ->select('sb.id', 'sb.quantity', 'sb.reserved_quantity')
+                ->lock('FOR UPDATE OF sb')
+                ->get();
+
+            foreach ($balances as $bal) {
+                if ($remaining <= 0) break;
+                $availHere = (float) $bal->quantity - (float) $bal->reserved_quantity;
+                if ($availHere <= 0) continue;
+                $take = min($remaining, $availHere);
+                DB::table('tbs_stock_balances')->where('id', $bal->id)->update([
+                    'reserved_quantity' => DB::raw('reserved_quantity + ' . $take),
+                    'last_updated_date' => now(),
+                ]);
+                $remaining -= $take;
+            }
+            if ($remaining > 0.001) {
+                throw new \RuntimeException('Reserve gagal: stock berubah saat proses. Coba lagi.');
+            }
+
+            // 3) Insert item
+            $item = SalesOrderItem::create([
+                'so_id'           => $so->id,
+                'product_id'      => $product->id,
+                'uom_id'          => $product->base_uom_id,
+                'quantity'        => $qty,
+                'unit_price'      => $price,
+                'discount_pct'    => $discPct,
+                'discount_amount' => $discAmt,
+                'subtotal'        => $subtot,
+                'notes'           => $row['notes'] ?? null,
+            ]);
+
+            // 4) Recalc totals
+            $this->recalcTotals($so->fresh());
+
+            return $item;
+        });
+    }
+
+    public function markAsPaid(SalesOrder $so): SalesOrder
+    {
+        if (! $so->isMarkPaidable()) {
+            throw new \RuntimeException("SO ini tidak bisa ditandai Paid pada status: {$so->status_label}.");
+        }
+        $so->update(['status' => SalesOrder::STATUS_PAID]);
+        return $so;
     }
 
     private function getAvailable(int $productId, int $warehouseId): float

@@ -19,10 +19,9 @@
                 <div class="card-toolbar"><span class="badge {{ $po->status_badge }} fs-6">{{ $po->status_label }}</span></div>
             </div>
             <div class="card-body">
-                <div class="row mb-3"><div class="col-3 text-muted">Tanggal PO</div><div class="col-9 fw-bold">{{ $po->po_date?->format('d M Y') }}</div></div>
-                <div class="row mb-3"><div class="col-3 text-muted">Expected Delivery</div><div class="col-9 fw-bold">{{ $po->expected_date?->format('d M Y') ?? '—' }}</div></div>
+                <div class="row mb-3"><div class="col-3 text-muted">Tanggal Pembelian</div><div class="col-9 fw-bold">{{ $po->po_date?->format('d M Y') }}</div></div>
+                <div class="row mb-3"><div class="col-3 text-muted">Rencana Belanja</div><div class="col-9 fw-bold">{{ $po->expected_date?->format('d M Y') ?? '—' }}</div></div>
                 <div class="row mb-3"><div class="col-3 text-muted">Supplier</div><div class="col-9 fw-bold">{{ $po->supplier->code }} — {{ $po->supplier->name }}</div></div>
-                <div class="row mb-3"><div class="col-3 text-muted">Warehouse Tujuan</div><div class="col-9 fw-bold">{{ $po->warehouse->code }} — {{ $po->warehouse->name }}</div></div>
                 @if($po->notes)
                     <div class="row"><div class="col-3 text-muted">Catatan</div><div class="col-9">{{ $po->notes }}</div></div>
                 @endif
@@ -39,6 +38,7 @@
                             <th class="text-end">Qty (gram)</th>
                             <th class="text-end">Qty (kg)</th>
                             <th class="text-end">Harga/Kg</th>
+                            <th class="text-end">Diskon</th>
                             <th class="text-end pe-4">Subtotal</th>
                         </tr></thead>
                         <tbody>
@@ -49,12 +49,13 @@
                                 <td class="text-end">{{ number_format((float)$item->qty_gram, 0, ',', '.') }} g</td>
                                 <td class="text-end fw-bold">{{ rtrim(rtrim(number_format($kg, 3, ',', '.'), '0'), ',') }} kg</td>
                                 <td class="text-end">{{ number_format((float)$item->price_per_kg, 0, ',', '.') }}</td>
+                                <td class="text-end">{{ number_format((float)($item->discount_amount ?? 0), 0, ',', '.') }}</td>
                                 <td class="text-end pe-4 fw-bold">{{ number_format((float)$item->subtotal, 0, ',', '.') }}</td>
                             </tr>
                         @endforeach
                         </tbody>
                         <tfoot class="fw-bold">
-                            <tr><td colspan="4" class="text-end fs-4">TOTAL</td><td class="text-end pe-4 fs-4 text-primary">Rp {{ number_format((float)$po->total_amount, 0, ',', '.') }}</td></tr>
+                            <tr><td colspan="5" class="text-end fs-4">TOTAL</td><td class="text-end pe-4 fs-4 text-primary">Rp {{ number_format((float)$po->total_amount, 0, ',', '.') }}</td></tr>
                         </tfoot>
                     </table>
                 </div>
@@ -79,13 +80,13 @@
                 @if($po->isEditable() && auth()->user()?->hasPermission('purchase_order.update'))
                     <a href="{{ route('purchase_orders.edit', $po) }}" class="btn btn-light-warning"><i class="ki-outline ki-pencil fs-2"></i> Edit</a>
                 @endif
-                @if($po->isSubmittable() && auth()->user()?->hasPermission('purchase_order.submit'))
-                    <form method="POST" action="{{ route('purchase_orders.submit', $po) }}" onsubmit="return confirm('Submit PO ini?')">@csrf
-                        <button type="submit" class="btn btn-success w-100"><i class="ki-outline ki-check-circle fs-2"></i> Submit PO</button>
+                @if($po->isMarkPaidable() && auth()->user()?->hasPermission('purchase_order.mark_paid'))
+                    <form method="POST" action="{{ route('purchase_orders.mark-paid', $po) }}" onsubmit="return confirm('Tandai Belanja ini sebagai Terbayar? Barang sudah diterima &amp; dibayar ke supplier.')">@csrf
+                        <button type="submit" class="btn btn-success w-100"><i class="ki-outline ki-wallet fs-2"></i> Tandai Terbayar</button>
                     </form>
                 @endif
                 @if($po->isCancellable() && auth()->user()?->hasPermission('purchase_order.cancel'))
-                    <form method="POST" action="{{ route('purchase_orders.cancel', $po) }}" onsubmit="return confirm('Batalkan PO ini?')">@csrf
+                    <form method="POST" action="{{ route('purchase_orders.cancel', $po) }}" onsubmit="return confirm('Batalkan Belanja ini?')">@csrf
                         <button type="submit" class="btn btn-light-danger w-100"><i class="ki-outline ki-cross-circle fs-2"></i> Cancel</button>
                     </form>
                 @endif

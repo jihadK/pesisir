@@ -62,11 +62,34 @@ class CustomerController extends Controller
                 'customer_type'      => 'individu',
                 'credit_limit'       => 0,
                 'payment_terms_days' => 0,
+                'code'               => $this->generateCustomerCode(),
             ]),
             'types'         => Customer::TYPES,
             'tiers'         => PriceTier::where('is_active', true)->orderBy('id')->get(['id', 'name']),
             'typeToTier'    => Customer::TYPE_TO_TIER,
         ]);
+    }
+
+    /**
+     * Auto-generate kode customer: CUST-001, CUST-002, dst.
+     * Cari max sequence dari existing code yang match pola CUST-NNN, +1.
+     */
+    private function generateCustomerCode(): string
+    {
+        $last = \App\Models\Customer::query()
+            ->withTrashed()
+            ->where('code', 'like', 'CUST-%')
+            ->orderByDesc('code')
+            ->value('code');
+
+        $next = 1;
+        if ($last) {
+            $parts = explode('-', $last);
+            $tail  = end($parts);
+            if (is_numeric($tail)) $next = (int) $tail + 1;
+        }
+
+        return sprintf('CUST-%03d', $next);
     }
 
     public function store(StoreCustomerRequest $request): RedirectResponse

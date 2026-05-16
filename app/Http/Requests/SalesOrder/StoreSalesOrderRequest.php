@@ -23,6 +23,7 @@ class StoreSalesOrderRequest extends FormRequest
             'payment_terms_days' => ['nullable', 'integer', 'min:0', 'max:365'],
             'payment_method_id'  => ['nullable', 'integer', Rule::exists('tbm_payment_methods', 'id')],
             'shipping_cost'      => ['nullable', 'numeric', 'min:0'],
+            'packing_cost'       => ['nullable', 'numeric', 'min:0'],
             'discount_amount'    => ['nullable', 'numeric', 'min:0'],
             'notes'              => ['nullable', 'string', 'max:1000'],
 
@@ -61,6 +62,7 @@ class StoreSalesOrderRequest extends FormRequest
 
         $this->merge([
             'shipping_cost'   => $this->cleanRupiah($this->input('shipping_cost')) ?? 0,
+            'packing_cost'    => $this->cleanRupiah($this->input('packing_cost')) ?? 0,
             'discount_amount' => $this->cleanRupiah($this->input('discount_amount')) ?? 0,
         ]);
     }

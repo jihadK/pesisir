@@ -38,19 +38,11 @@
                     </div>
                 </div>
 
-                <div class="row mb-4">
-                    <label class="col-form-label col-md-3 fw-semibold required">Warehouse</label>
-                    <div class="col-md-9">
-                        <select name="warehouse_id" class="form-select form-select-solid @error('warehouse_id') is-invalid @enderror"
-                                data-control="select2" data-placeholder="Pilih warehouse..." required>
-                            <option value=""></option>
-                            @foreach($warehouses as $w)
-                                <option value="{{ $w->id }}" @selected(old('warehouse_id', $so->warehouse_id)==$w->id)>{{ $w->code }} — {{ $w->name }}</option>
-                            @endforeach
-                        </select>
-                        @error('warehouse_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
-                </div>
+                @php
+                    $defaultWh = $warehouses->firstWhere('code', 'WH-LAMONGAN') ?? $warehouses->first();
+                    $selectedWh = old('warehouse_id', $so->warehouse_id ?? $defaultWh?->id);
+                @endphp
+                <input type="hidden" name="warehouse_id" id="warehouse_id" value="{{ $selectedWh }}" />
 
                 <div class="row mb-4">
                     <label class="col-form-label col-md-3 fw-semibold required">Tanggal Order</label>
@@ -72,19 +64,11 @@
                     </div>
                 </div>
 
+                <input type="hidden" name="payment_terms_days" value="{{ old('payment_terms_days', $so->payment_terms_days ?? 0) }}" />
+
                 <div class="row mb-4">
-                    <label class="col-form-label col-md-3 fw-semibold">Term Pembayaran</label>
-                    <div class="col-md-3">
-                        <div class="input-group">
-                            <input type="number" name="payment_terms_days" min="0" max="365"
-                                   value="{{ old('payment_terms_days', $so->payment_terms_days ?? 0) }}"
-                                   class="form-control form-control-solid" />
-                            <span class="input-group-text">hari</span>
-                        </div>
-                        <div class="form-text fs-8">0 = bayar sekarang/COD. Auto-fill dari customer.</div>
-                    </div>
                     <label class="col-form-label col-md-3 fw-semibold">Metode Pembayaran</label>
-                    <div class="col-md-3">
+                    <div class="col-md-9">
                         <select name="payment_method_id" class="form-select form-select-solid"
                                 data-control="select2" data-placeholder="(Belum ditentukan)">
                             <option value="">— Belum ditentukan —</option>
@@ -174,6 +158,15 @@
                                class="form-control form-control-sm form-control-solid text-end" />
                     </div>
                 </div>
+                <div class="d-flex flex-stack mb-3 fs-7">
+                    <span class="text-muted">Biaya Packing:</span>
+                    <div class="input-group input-group-sm" style="max-width:140px">
+                        <span class="input-group-text">Rp</span>
+                        <input type="text" name="packing_cost" id="sm_packing"
+                               value="{{ old('packing_cost', $so->packing_cost ? number_format((float)$so->packing_cost, 0, ',', '.') : '0') }}"
+                               class="form-control form-control-sm form-control-solid text-end" />
+                    </div>
+                </div>
                 <div class="separator my-3"></div>
                 <div class="d-flex flex-stack">
                     <span class="text-muted">TOTAL:</span>
@@ -184,7 +177,7 @@
 
         <div class="d-flex flex-column gap-2">
             <button type="submit" class="btn btn-primary">
-                <i class="ki-outline ki-check fs-2"></i> {{ $isEdit ? 'Update SO' : 'Simpan SO (Draft)' }}
+                <i class="ki-outline ki-check fs-2"></i> {{ $isEdit ? 'Update Order' : 'Simpan Order (Draft)' }}
             </button>
             <a href="{{ $isEdit ? route('sales_orders.show', $so) : route('sales_orders.index') }}" class="btn btn-light">Batal</a>
         </div>
@@ -315,7 +308,8 @@ function recalcTotals() {
     });
     const disc     = unmask(document.getElementById('sm_discount').value);
     const shipping = unmask(document.getElementById('sm_shipping').value);
-    const total    = Math.max(0, subtotal - disc + shipping);
+    const packing  = unmask(document.getElementById('sm_packing').value);
+    const total    = Math.max(0, subtotal - disc + shipping + packing);
 
     document.getElementById('ft_subtotal').textContent = fmtRp(subtotal);
     document.getElementById('sm_subtotal').textContent = fmtRp(subtotal);
@@ -410,8 +404,10 @@ function addRow(prefill = null) {
 document.addEventListener('DOMContentLoaded', () => {
     maskRupiah(document.getElementById('sm_discount'));
     maskRupiah(document.getElementById('sm_shipping'));
+    maskRupiah(document.getElementById('sm_packing'));
     document.getElementById('sm_discount').addEventListener('input', recalcTotals);
     document.getElementById('sm_shipping').addEventListener('input', recalcTotals);
+    document.getElementById('sm_packing').addEventListener('input', recalcTotals);
 
     if (EXISTING.length) {
         EXISTING.forEach(addRow);
@@ -452,15 +448,9 @@ document.addEventListener('DOMContentLoaded', () => {
     orderEl.addEventListener('change', () => { if (chkSame.checked) deliveryEl.value = orderEl.value; });
     applySameDate();
 
-    // Load stock saat warehouse berubah
-    const whEl = document.querySelector('select[name="warehouse_id"]');
-    if (whEl) {
-        window.jQuery(whEl).on('change', function () {
-            loadStocksForWarehouse(this.value);
-        });
-        // initial load (kalau ada nilai default)
-        if (whEl.value) loadStocksForWarehouse(whEl.value);
-    }
+    // Warehouse hidden — load stock dari nilai default (WH-LAMONGAN)
+    const whEl = document.getElementById('warehouse_id');
+    if (whEl && whEl.value) loadStocksForWarehouse(whEl.value);
 });
 </script>
 @endpush

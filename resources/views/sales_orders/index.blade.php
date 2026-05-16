@@ -1,24 +1,25 @@
 @extends('layouts.app')
 
-@section('title', 'Sales Order')
-@section('page_title', 'Sales Order')
+@php $isPaidView = ($filters['status'] ?? '') === 'paid'; @endphp
+@section('title', $isPaidView ? 'Daftar Invoice' : 'Booking Order')
+@section('page_title', $isPaidView ? 'Daftar Invoice' : 'Booking Order')
 @section('breadcrumb')
     <li class="breadcrumb-item text-muted">Penjualan</li>
     <li class="breadcrumb-item"><span class="bullet bg-gray-300 w-5px h-2px"></span></li>
-    <li class="breadcrumb-item text-gray-900">Sales Order</li>
+    <li class="breadcrumb-item text-gray-900">{{ $isPaidView ? 'Daftar Invoice' : 'Booking Order' }}</li>
 @endsection
 
 @section('content')
 <div class="card">
     <div class="card-header border-0 pt-6">
         <div class="card-title flex-column">
-            <h2 class="mb-1">Daftar Sales Order</h2>
-            <span class="text-muted fs-7">Order customer (status draft → confirmed → delivered → invoiced).</span>
+            <h2 class="mb-1">{{ $isPaidView ? 'Daftar Invoice (Sudah Terbayar)' : 'Daftar Booking Order' }}</h2>
+            <span class="text-muted fs-7">{{ $isPaidView ? 'Order yang sudah lunas / paid.' : 'Order customer (Draft → Paid).' }}</span>
         </div>
         <div class="card-toolbar">
-            @if(auth()->user()?->hasPermission('sales_order.create'))
+            @if(! $isPaidView && auth()->user()?->hasPermission('sales_order.create'))
                 <a href="{{ route('sales_orders.create') }}" class="btn btn-primary">
-                    <i class="ki-outline ki-plus fs-2"></i> SO Baru
+                    <i class="ki-outline ki-plus fs-2"></i> Order Baru
                 </a>
             @endif
         </div>
@@ -55,9 +56,8 @@
                 <thead>
                     <tr class="fw-bold text-muted bg-light">
                         <th class="ps-4">Tanggal</th>
-                        <th>No. SO</th>
+                        <th>No. Order</th>
                         <th>Customer</th>
-                        <th>Warehouse</th>
                         <th class="text-center">Status</th>
                         <th class="text-end">Total</th>
                         <th>Sales</th>
@@ -73,16 +73,15 @@
                             <div class="fw-bold">{{ $o->customer->name }}</div>
                             <div class="text-muted fs-8">{{ $o->customer->code }}</div>
                         </td>
-                        <td class="fs-7">{{ $o->warehouse->code }}</td>
                         <td class="text-center"><span class="badge {{ $o->status_badge }} fs-7">{{ $o->status_label }}</span></td>
-                        <td class="text-end fw-bold">Rp {{ number_format((float)$o->total_amount, 0, ',', '.') }}</td>
+                        <td class="text-end fw-bold">{{ number_format((float)$o->total_amount, 0, ',', '.') }}</td>
                         <td class="fs-7">{{ $o->salesUser?->full_name ?? '—' }}</td>
                         <td class="text-end pe-4">
                             <a href="{{ route('sales_orders.show', $o) }}" class="btn btn-sm btn-light-info"><i class="ki-outline ki-eye fs-3"></i></a>
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="8" class="text-center text-muted py-10">Belum ada sales order.</td></tr>
+                    <tr><td colspan="7" class="text-center text-muted py-10">Belum ada booking order.</td></tr>
                 @endforelse
                 </tbody>
             </table>

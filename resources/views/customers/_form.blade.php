@@ -11,10 +11,9 @@
                     <div class="col-md-9">
                         <input type="text" name="code" value="{{ old('code', $customer->code) }}"
                                class="form-control form-control-solid text-uppercase @error('code') is-invalid @enderror"
-                               placeholder="CUST-001" maxlength="20"
-                               {{ $isEdit ? 'readonly' : 'required' }} />
+                               maxlength="20" readonly required />
                         @error('code')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                        <div class="form-text">{{ $isEdit ? 'Kode tidak bisa diubah setelah dibuat.' : 'Huruf kapital, angka, tanda hubung. Contoh: CUST-001' }}</div>
+                        <div class="form-text">{{ $isEdit ? 'Kode tidak bisa diubah setelah dibuat.' : 'Kode otomatis dibuat sistem.' }}</div>
                     </div>
                 </div>
                 <div class="row mb-5">
@@ -90,26 +89,16 @@
                         @error('city')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                 </div>
-                <div class="row mb-5">
-                    <label class="col-form-label col-md-3 fw-semibold">NPWP</label>
-                    <div class="col-md-9">
-                        <input type="text" name="npwp" id="customer_npwp"
-                               value="{{ old('npwp', $customer->npwp) }}"
-                               class="form-control form-control-solid @error('npwp') is-invalid @enderror"
-                               placeholder="00.000.000.0-000.000 atau 16 digit"
-                               maxlength="30" />
-                        @error('npwp')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                        <div class="form-text">Format 15 digit (XX.XXX.XXX.X-XXX.XXX) atau 16 digit (NPWP NIK).</div>
-                    </div>
-                </div>
+                {{-- NPWP di-hide --}}
+                <input type="hidden" name="npwp" value="{{ old('npwp', $customer->npwp) }}" />
             </div>
         </div>
 
-        {{-- Section 3: Pricing & Limit --}}
+        {{-- Section 3: Pricing & Limit — Credit Limit & TOP di-hide, hanya Tier Harga yang terlihat --}}
         <div class="card mb-5">
-            <div class="card-header"><h3 class="card-title">Pricing &amp; Limit Kredit</h3></div>
+            <div class="card-header"><h3 class="card-title">Tier Harga</h3></div>
             <div class="card-body">
-                <div class="row mb-5">
+                <div class="row">
                     <label class="col-form-label col-md-3 fw-semibold">Tier Harga</label>
                     <div class="col-md-9">
                         <select name="price_tier_id" id="price_tier_id"
@@ -127,26 +116,10 @@
                         @error('price_tier_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                 </div>
-                <div class="row mb-5">
-                    <label class="col-form-label col-md-3 fw-semibold required">Credit Limit (Rp)</label>
-                    <div class="col-md-9">
-                        <input type="text" name="credit_limit" id="customer_credit_limit"
-                               value="{{ old('credit_limit', $customer->credit_limit ? number_format((float)$customer->credit_limit, 0, ',', '.') : '0') }}"
-                               class="form-control form-control-solid @error('credit_limit') is-invalid @enderror" required />
-                        @error('credit_limit')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                        <div class="form-text">Isi 0 untuk Cash on Delivery (COD). Format otomatis dengan separator titik.</div>
-                    </div>
-                </div>
-                <div class="row mb-5">
-                    <label class="col-form-label col-md-3 fw-semibold required">TOP (Hari)</label>
-                    <div class="col-md-3">
-                        <input type="number" name="payment_terms_days"
-                               value="{{ old('payment_terms_days', $customer->payment_terms_days ?? 0) }}"
-                               class="form-control form-control-solid @error('payment_terms_days') is-invalid @enderror"
-                               min="0" max="365" required />
-                        @error('payment_terms_days')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
-                </div>
+
+                {{-- Credit Limit & TOP di-hide dengan default 0 --}}
+                <input type="hidden" name="credit_limit" value="{{ old('credit_limit', (int) ($customer->credit_limit ?? 0)) }}" />
+                <input type="hidden" name="payment_terms_days" value="{{ old('payment_terms_days', (int) ($customer->payment_terms_days ?? 0)) }}" />
             </div>
         </div>
     </div>

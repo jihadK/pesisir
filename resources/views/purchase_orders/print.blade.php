@@ -76,11 +76,12 @@
     <thead>
         <tr>
             <th style="width:5%">No</th>
-            <th style="width:42%">Sub-Kategori</th>
-            <th class="text-end" style="width:14%">Qty (gram)</th>
-            <th class="text-end" style="width:13%">Kg</th>
-            <th class="text-end" style="width:13%">Harga/Kg</th>
-            <th class="text-end" style="width:13%">Subtotal</th>
+            <th style="width:36%">Sub-Kategori</th>
+            <th class="text-end" style="width:13%">Qty (gram)</th>
+            <th class="text-end" style="width:11%">Kg</th>
+            <th class="text-end" style="width:12%">Harga/Kg</th>
+            <th class="text-end" style="width:11%">Diskon</th>
+            <th class="text-end" style="width:12%">Subtotal</th>
         </tr>
     </thead>
     <tbody>
@@ -92,6 +93,7 @@
             <td class="text-end">{{ number_format((float)$item->qty_gram, 0, ',', '.') }}</td>
             <td class="text-end">{{ rtrim(rtrim(number_format($kg, 3, ',', '.'), '0'), ',') }}</td>
             <td class="text-end">{{ number_format((float)$item->price_per_kg, 0, ',', '.') }}</td>
+            <td class="text-end">{{ number_format((float)($item->discount_amount ?? 0), 0, ',', '.') }}</td>
             <td class="text-end">{{ number_format((float)$item->subtotal, 0, ',', '.') }}</td>
         </tr>
     @endforeach

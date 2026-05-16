@@ -132,12 +132,21 @@ class DeliveryOrderService
                 $remaining = $qty;
                 foreach ($balances as $bal) {
                     if ($remaining <= 0) break;
-                    $availableHere = (float) $bal->quantity; // ambil semua (reserved boleh ikut keluar karena kita yang reserve)
-                    if ($availableHere <= 0) continue;
-                    $take = min($remaining, $availableHere);
+
+                    // DOUBLE-CHECK qty aktual dari DB (anti stale snapshot)
+                    $fresh = DB::table('tbs_stock_balances')
+                        ->where('id', $bal->id)
+                        ->select('quantity', 'reserved_quantity')
+                        ->first();
+                    if (! $fresh) continue;
+                    $actualQty      = (float) $fresh->quantity;
+                    $actualReserved = (float) $fresh->reserved_quantity;
+                    if ($actualQty <= 0) continue;
+
+                    $take = min($remaining, $actualQty);
 
                     // 1. Release reserved untuk batch ini sebesar take (max sebesar reserved yang ada)
-                    $releaseHere = min($take, (float) $bal->reserved_quantity);
+                    $releaseHere = min($take, $actualReserved);
                     if ($releaseHere > 0) {
                         DB::table('tbs_stock_balances')
                             ->where('id', $bal->id)

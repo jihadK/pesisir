@@ -51,15 +51,20 @@ class SupplierController extends Controller
     {
         return view('suppliers.create', [
             'supplier' => new Supplier([
+                'code'               => $this->generateSupplierCode(),
                 'is_active'          => true,
-                'payment_terms_days' => 30,
+                'payment_terms_days' => 0,
             ]),
         ]);
     }
 
     public function store(StoreSupplierRequest $request): RedirectResponse
     {
-        $supplier = Supplier::create($request->validated());
+        $data = $request->validated();
+        if (empty($data['code'])) {
+            $data['code'] = $this->generateSupplierCode();
+        }
+        $supplier = Supplier::create($data);
 
         return redirect()
             ->route('suppliers.index')
@@ -149,5 +154,26 @@ class SupplierController extends Controller
         return $request->expectsJson()
             ? $this->ok(null, $msg)
             : redirect()->route('suppliers.index')->with('flash', Flash::ok($msg, 'Dipulihkan'));
+    }
+
+    /**
+     * Auto-generate kode supplier: SUP-001, SUP-002, dst.
+     */
+    private function generateSupplierCode(): string
+    {
+        $last = Supplier::query()
+            ->withTrashed()
+            ->where('code', 'like', 'SUP-%')
+            ->orderByDesc('code')
+            ->value('code');
+
+        $next = 1;
+        if ($last) {
+            $parts = explode('-', $last);
+            $tail  = end($parts);
+            if (is_numeric($tail)) $next = (int) $tail + 1;
+        }
+
+        return sprintf('SUP-%03d', $next);
     }
 }

@@ -11,10 +11,9 @@
                     <div class="col-md-9">
                         <input type="text" name="code" value="{{ old('code', $supplier->code) }}"
                                class="form-control form-control-solid text-uppercase @error('code') is-invalid @enderror"
-                               placeholder="SUP-001" maxlength="20"
-                               {{ $isEdit ? 'readonly' : 'required' }} />
+                               placeholder="SUP-001" maxlength="20" readonly />
                         @error('code')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                        <div class="form-text">{{ $isEdit ? 'Kode tidak bisa diubah setelah dibuat.' : 'Huruf kapital, angka, tanda hubung. Contoh: SUP-001' }}</div>
+                        <div class="form-text">Kode di-generate otomatis.</div>
                     </div>
                 </div>
                 <div class="row mb-5">
@@ -44,15 +43,7 @@
                         @error('phone')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                 </div>
-                <div class="row mb-5">
-                    <label class="col-form-label col-md-3 fw-semibold">Email</label>
-                    <div class="col-md-9">
-                        <input type="email" name="email" value="{{ old('email', $supplier->email) }}"
-                               class="form-control form-control-solid @error('email') is-invalid @enderror"
-                               placeholder="kontak@supplier.com" maxlength="100" />
-                        @error('email')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
-                </div>
+                <input type="hidden" name="email" value="{{ old('email', $supplier->email) }}" />
             </div>
         </div>
 
@@ -78,15 +69,7 @@
                         @error('city')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                 </div>
-                <div class="row mb-5">
-                    <label class="col-form-label col-md-3 fw-semibold">NPWP</label>
-                    <div class="col-md-9">
-                        <input type="text" name="npwp" value="{{ old('npwp', $supplier->npwp) }}"
-                               class="form-control form-control-solid @error('npwp') is-invalid @enderror"
-                               placeholder="00.000.000.0-000.000" maxlength="30" />
-                        @error('npwp')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
-                </div>
+                <input type="hidden" name="npwp" value="{{ old('npwp', $supplier->npwp) }}" />
             </div>
         </div>
 
@@ -112,17 +95,7 @@
                         @error('bank_account')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                 </div>
-                <div class="row mb-5">
-                    <label class="col-form-label col-md-3 fw-semibold required">TOP (Hari)</label>
-                    <div class="col-md-3">
-                        <input type="number" name="payment_terms_days"
-                               value="{{ old('payment_terms_days', $supplier->payment_terms_days ?? 30) }}"
-                               class="form-control form-control-solid @error('payment_terms_days') is-invalid @enderror"
-                               min="0" max="365" required />
-                        @error('payment_terms_days')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                        <div class="form-text">0 = pembayaran cash on delivery (COD).</div>
-                    </div>
-                </div>
+                <input type="hidden" name="payment_terms_days" value="{{ old('payment_terms_days', $supplier->payment_terms_days ?? 0) }}" />
             </div>
         </div>
     </div>

@@ -89,22 +89,20 @@
             <thead>
                 <tr class="text-start text-muted fw-bold fs-7 text-uppercase gs-0">
                     <th class="min-w-60px"></th>
-                    <th class="min-w-130px">SKU</th>
+                    <th class="min-w-130px">Kode Produk</th>
                     <th class="min-w-200px">Nama</th>
                     <th class="min-w-120px">Kategori</th>
-                    <th class="min-w-100px">Grade</th>
-                    <th class="text-end min-w-100px">Stock</th>
-                    <th class="min-w-80px">UoM</th>
+                    <th class="text-end min-w-100px">Stok</th>
+                    <th class="min-w-80px">Satuan</th>
                     <th class="text-end min-w-130px">Harga Jual</th>
                     <th class="min-w-100px">Status</th>
                     <th class="text-end min-w-100px">Aksi</th>
                 </tr>
                 <tr class="filter-row">
                     <th></th>
-                    <th><input type="text" class="form-control form-control-sm form-control-solid" placeholder="Cari SKU" data-col="1" /></th>
+                    <th><input type="text" class="form-control form-control-sm form-control-solid" placeholder="Cari kode" data-col="1" /></th>
                     <th><input type="text" class="form-control form-control-sm form-control-solid" placeholder="Cari nama" data-col="2" /></th>
                     <th><input type="text" class="form-control form-control-sm form-control-solid" placeholder="Cari kategori" data-col="3" /></th>
-                    <th></th>
                     <th></th>
                     <th></th>
                     <th></th>
@@ -134,13 +132,6 @@
                             @endif
                         </td>
                         <td>{{ $p->category?->name ?? '—' }}</td>
-                        <td>
-                            @if($p->grade)
-                                <span class="badge fw-bold" style="background:{{ $p->grade->color ?? '#6c757d' }};color:#fff">{{ $p->grade->code }}</span>
-                            @else
-                                <span class="text-muted">—</span>
-                            @endif
-                        </td>
                         @php
                             $ts = (float) $p->total_stock;
                             $tsFmt = floor($ts) == $ts ? number_format($ts, 0, ',', '.') : number_format($ts, 3, ',', '.');
@@ -186,6 +177,18 @@
                                 @else
                                     <div class="menu-item px-3"><a href="{{ route('products.show', $p) }}" class="menu-link px-3">Detail</a></div>
                                     <div class="menu-item px-3"><a href="{{ route('products.edit', $p) }}" class="menu-link px-3">Edit</a></div>
+                                    @if(auth()->user()?->hasPermission('stock_adjustment.create'))
+                                        <div class="menu-item px-3">
+                                            <button type="button" class="menu-link px-3 w-100 text-start bg-transparent border-0 text-primary btn-update-stock"
+                                                    data-product-id="{{ $p->id }}"
+                                                    data-product-name="{{ $p->name }}"
+                                                    data-product-sku="{{ $p->sku }}"
+                                                    data-product-uom="{{ $p->baseUom?->code ?? '' }}"
+                                                    data-current-stock="{{ $p->total_stock }}">
+                                                Update Stok
+                                            </button>
+                                        </div>
+                                    @endif
                                     <div class="menu-item px-3">
                                         <form method="POST" action="{{ route('products.destroy', $p) }}"
                                               data-sweet-confirm
@@ -207,6 +210,74 @@
         </table>
     </div>
 </div>
+
+{{-- Modal: Update Stok (Quick Adjustment) --}}
+@if(auth()->user()?->hasPermission('stock_adjustment.create'))
+<div class="modal fade" id="modal_update_stock" tabindex="-1">
+    <div class="modal-dialog">
+        <form method="POST" action="{{ route('products.update-stock', ['product' => 0]) }}" id="frm_update_stock" class="modal-content">
+            @csrf
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="ki-outline ki-package text-primary me-2"></i> Update Stok</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-light-info py-3 mb-4">
+                    <div class="d-flex flex-stack mb-1 fs-7"><span class="text-muted">Produk:</span><span class="fw-bold" id="us_name">—</span></div>
+                    <div class="d-flex flex-stack mb-1 fs-7"><span class="text-muted">Kode Produk:</span><span class="fw-bold" id="us_sku">—</span></div>
+                    <div class="separator my-2"></div>
+                    <div class="d-flex flex-stack">
+                        <span class="text-muted">Stok saat ini:</span>
+                        <span class="fw-bolder fs-3" id="us_current">0</span>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <label class="col-form-label col-md-3 fw-semibold required">Tipe</label>
+                    <div class="col-md-9">
+                        <div class="d-flex gap-3">
+                            <label class="form-check form-check-custom form-check-solid">
+                                <input class="form-check-input us-direction" type="radio" name="direction" value="in" checked />
+                                <span class="form-check-label fw-semibold ms-2 text-success">Tambah (+)</span>
+                            </label>
+                            <label class="form-check form-check-custom form-check-solid">
+                                <input class="form-check-input us-direction" type="radio" name="direction" value="out" />
+                                <span class="form-check-label fw-semibold ms-2 text-danger">Kurang (−)</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <label class="col-form-label col-md-3 fw-semibold required">Qty</label>
+                    <div class="col-md-9">
+                        <div class="input-group" style="max-width:240px">
+                            <input type="number" step="0.001" min="0.001" name="quantity" id="us_qty"
+                                   class="form-control form-control-solid text-end" required />
+                            <span class="input-group-text" id="us_uom">unit</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <label class="col-form-label col-md-3 fw-semibold required">Catatan</label>
+                    <div class="col-md-9">
+                        <textarea name="notes" rows="2" class="form-control form-control-solid"
+                                  placeholder="Mis. hasil opname tanggal X" minlength="5" maxlength="500" required></textarea>
+                        <div class="form-text fs-8">Min 5 karakter (audit trail).</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="ki-outline ki-check fs-2"></i> Simpan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+@endif
 @endsection
 
 @push('scripts')
@@ -224,8 +295,8 @@ document.addEventListener('DOMContentLoaded', function () {
             emptyTable: @json($filters['trash'] ? 'Tidak ada produk yang terhapus.' : 'Belum ada data produk. Klik "Tambah Produk" di atas.')
         },
         columnDefs: [
-            { orderable: false, targets: [0, 9] },
-            { searchable: false, targets: [0, 4, 5, 6, 7, 8, 9] }
+            { orderable: false, targets: [0, 8] },
+            { searchable: false, targets: [0, 4, 5, 6, 7, 8] }
         ],
         initComplete: function () { $('.dataTables_filter').hide(); }
     });
@@ -233,6 +304,31 @@ document.addEventListener('DOMContentLoaded', function () {
     $('.filter-row input').on('click', e => e.stopPropagation())
         .on('keyup change clear', function () { var c = $(this).data('col'); if (dt.column(c).search() !== this.value) dt.column(c).search(this.value).draw(); });
     $('.filter-row th').off('click.DT').on('click', e => e.stopPropagation());
+
+    // ========== Quick Update Stock ==========
+    const updateStockForm = document.getElementById('frm_update_stock');
+    function fmtQty(v) {
+        const n = parseFloat(v) || 0;
+        return Math.floor(n) === n ? n.toLocaleString('id-ID') : n.toLocaleString('id-ID', {minimumFractionDigits:3, maximumFractionDigits:3});
+    }
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest('.btn-update-stock');
+        if (! btn) return;
+        const productId = btn.dataset.productId;
+        const url = "{{ route('products.update-stock', ['product' => 'PID']) }}".replace('PID', productId);
+        if (updateStockForm) updateStockForm.action = url;
+
+        document.getElementById('us_name').textContent    = btn.dataset.productName;
+        document.getElementById('us_sku').textContent     = btn.dataset.productSku;
+        document.getElementById('us_uom').textContent     = btn.dataset.productUom || 'unit';
+        document.getElementById('us_current').textContent = fmtQty(btn.dataset.currentStock);
+        document.getElementById('us_qty').value = '';
+        updateStockForm.querySelector('textarea[name="notes"]').value = '';
+        updateStockForm.querySelectorAll('.us-direction').forEach((r, idx) => r.checked = idx === 0);
+
+        const modal = new bootstrap.Modal(document.getElementById('modal_update_stock'));
+        modal.show();
+    });
 });
 </script>
 @endpush

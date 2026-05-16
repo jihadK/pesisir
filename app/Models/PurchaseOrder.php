@@ -14,6 +14,7 @@ class PurchaseOrder extends BaseModel
     public const STATUS_SUBMITTED = 'submitted';
     public const STATUS_PARTIAL   = 'partial';
     public const STATUS_RECEIVED  = 'received';
+    public const STATUS_PAID      = 'paid';
     public const STATUS_CANCELLED = 'cancelled';
 
     protected $fillable = [
@@ -67,7 +68,8 @@ class PurchaseOrder extends BaseModel
             self::STATUS_SUBMITTED => 'Submitted',
             self::STATUS_PARTIAL   => 'Partial Received',
             self::STATUS_RECEIVED  => 'Received',
-            self::STATUS_CANCELLED => 'Cancelled',
+            self::STATUS_PAID      => 'Paid',
+            self::STATUS_CANCELLED => 'Cancel',
         ];
     }
 
@@ -82,14 +84,16 @@ class PurchaseOrder extends BaseModel
             self::STATUS_DRAFT     => 'badge-light-secondary',
             self::STATUS_SUBMITTED => 'badge-light-primary',
             self::STATUS_PARTIAL   => 'badge-light-warning',
-            self::STATUS_RECEIVED  => 'badge-light-success',
+            self::STATUS_RECEIVED  => 'badge-light-info',
+            self::STATUS_PAID      => 'badge-light-success',
             self::STATUS_CANCELLED => 'badge-light-danger',
             default                => 'badge-light',
         };
     }
 
-    public function isEditable(): bool    { return $this->status === self::STATUS_DRAFT; }
-    public function isSubmittable(): bool { return $this->status === self::STATUS_DRAFT; }
-    public function isCancellable(): bool { return in_array($this->status, [self::STATUS_DRAFT, self::STATUS_SUBMITTED], true); }
-    public function isReceivable(): bool  { return in_array($this->status, [self::STATUS_SUBMITTED, self::STATUS_PARTIAL], true); }
+    public function isEditable(): bool      { return $this->status === self::STATUS_DRAFT; }
+    public function isSubmittable(): bool   { return $this->status === self::STATUS_DRAFT; }
+    public function isCancellable(): bool   { return in_array($this->status, [self::STATUS_DRAFT, self::STATUS_SUBMITTED], true); }
+    public function isReceivable(): bool    { return in_array($this->status, [self::STATUS_SUBMITTED, self::STATUS_PARTIAL], true); }
+    public function isMarkPaidable(): bool  { return in_array($this->status, [self::STATUS_DRAFT, self::STATUS_SUBMITTED, self::STATUS_PARTIAL, self::STATUS_RECEIVED], true); }
 }

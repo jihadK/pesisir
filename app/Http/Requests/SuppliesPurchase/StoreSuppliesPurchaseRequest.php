@@ -37,7 +37,10 @@ class StoreSuppliesPurchaseRequest extends FormRequest
     private function cleanNumber(mixed $val): ?float
     {
         if ($val === null || $val === '') return null;
-        $s = preg_replace('/[^0-9.]/', '', (string) $val);
+        $s = (string) $val;
+        $s = str_replace('.', '', $s);
+        $s = str_replace(',', '.', $s);
+        $s = preg_replace('/[^0-9.]/', '', $s);
         return $s === '' ? null : (float) $s;
     }
 }

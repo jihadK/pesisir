@@ -135,6 +135,19 @@ class PurchaseOrderController extends Controller
         return back()->with('flash', Flash::ok("PO {$purchaseOrder->po_number} dibatalkan.", 'Cancelled'));
     }
 
+    public function markPaid(Request $request, PurchaseOrder $purchaseOrder): RedirectResponse
+    {
+        if (! $request->user()?->hasPermission('purchase_order.mark_paid')) {
+            return back()->with('flash', Flash::err('Tidak punya akses tandai terbayar.', ResponseCode::FORBIDDEN));
+        }
+        try {
+            $this->service->markAsPaid($purchaseOrder);
+        } catch (\Throwable $e) {
+            return back()->with('flash', Flash::err($e->getMessage(), ResponseCode::BUSINESS_RULE_FAILED, 'Gagal Update'));
+        }
+        return back()->with('flash', Flash::ok("PO {$purchaseOrder->po_number} ditandai Terbayar.", 'Paid'));
+    }
+
     public function print(PurchaseOrder $purchaseOrder): View
     {
         $purchaseOrder->load([

@@ -31,6 +31,12 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [LoginController::class, 'login'])->name('login.attempt');
 });
 
+// Public — link kuitansi untuk customer (signed URL, tanpa login)
+Route::get('/p/so/{salesOrder}/receipt', [SalesOrderController::class, 'publicPrint'])
+    ->whereNumber('salesOrder')
+    ->middleware('signed')
+    ->name('sales_orders.public-print');
+
 // Authenticated
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
@@ -58,6 +64,9 @@ Route::middleware('auth')->group(function () {
         Route::middleware('permission:products.delete')->group(function () {
             Route::delete('/{product}',          [ProductController::class, 'destroy'])->whereNumber('product')->name('destroy');
             Route::post('/{product}/restore',    [ProductController::class, 'restore'])->whereNumber('product')->name('restore');
+        });
+        Route::middleware('permission:stock_adjustment.create')->group(function () {
+            Route::post('/{product}/update-stock', [ProductController::class, 'updateStock'])->whereNumber('product')->name('update-stock');
         });
     });
 
@@ -219,6 +228,12 @@ Route::middleware('auth')->group(function () {
         Route::middleware('permission:sales_order.cancel')->group(function () {
             Route::post('/{salesOrder}/cancel',  [SalesOrderController::class, 'cancel'])->whereNumber('salesOrder')->name('cancel');
         });
+        Route::middleware('permission:sales_order.mark_paid')->group(function () {
+            Route::post('/{salesOrder}/mark-paid', [SalesOrderController::class, 'markPaid'])->whereNumber('salesOrder')->name('mark-paid');
+        });
+        Route::middleware('permission:sales_order.update')->group(function () {
+            Route::post('/{salesOrder}/items', [SalesOrderController::class, 'appendItem'])->whereNumber('salesOrder')->name('items.append');
+        });
     });
 
     // ========== SALES — Delivery Order ==========
@@ -377,6 +392,9 @@ Route::middleware('auth')->group(function () {
         });
         Route::middleware('permission:purchase_order.cancel')->group(function () {
             Route::post('/{purchaseOrder}/cancel', [PurchaseOrderController::class, 'cancel'])->whereNumber('purchaseOrder')->name('cancel');
+        });
+        Route::middleware('permission:purchase_order.mark_paid')->group(function () {
+            Route::post('/{purchaseOrder}/mark-paid', [PurchaseOrderController::class, 'markPaid'])->whereNumber('purchaseOrder')->name('mark-paid');
         });
     });
 
