@@ -90,6 +90,74 @@
 <x-sweet-helpers />
 <x-sweet-flash />
 
+@auth
+    @if(auth()->user()?->hasPermission('sales_order.create') && ! request()->routeIs('sales_orders.create'))
+        <a href="{{ route('sales_orders.create') }}"
+           class="fab-new-order"
+           title="Buat Order Baru"
+           aria-label="Buat Order Baru">
+            <i class="ki-outline ki-plus fab-icon-main"></i>
+            <span class="fab-label">Order Baru</span>
+        </a>
+        <style>
+            .fab-new-order {
+                position: fixed;
+                bottom: 28px;
+                right: 28px;
+                z-index: 1040;
+                display: inline-flex;
+                align-items: center;
+                gap: 10px;
+                padding: 14px 22px 14px 18px;
+                background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+                color: #fff !important;
+                font-weight: 600;
+                font-size: 14px;
+                border-radius: 999px;
+                text-decoration: none;
+                box-shadow: 0 6px 20px rgba(25, 118, 210, 0.45), 0 2px 6px rgba(0,0,0,0.12);
+                transition: transform .2s ease, box-shadow .2s ease, padding .25s ease;
+            }
+            .fab-new-order .fab-icon-main {
+                font-size: 22px !important;
+                line-height: 1;
+                color: #fff;
+                transition: transform .25s ease;
+            }
+            .fab-new-order .fab-label {
+                white-space: nowrap;
+                transition: max-width .25s ease, opacity .2s ease, margin .25s ease;
+            }
+            .fab-new-order:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 10px 28px rgba(25, 118, 210, 0.55), 0 4px 10px rgba(0,0,0,0.15);
+                color: #fff !important;
+            }
+            .fab-new-order:hover .fab-icon-main { transform: rotate(90deg); }
+            .fab-new-order:active { transform: translateY(-1px); }
+            @media (max-width: 576px) {
+                .fab-new-order {
+                    width: 56px;
+                    height: 56px;
+                    padding: 0;
+                    gap: 0;
+                    bottom: 20px;
+                    right: 20px;
+                    justify-content: center;
+                }
+                .fab-new-order .fab-label {
+                    max-width: 0;
+                    opacity: 0;
+                    overflow: hidden;
+                    margin: 0;
+                    display: none;
+                }
+            }
+            @media print { .fab-new-order { display: none !important; } }
+        </style>
+    @endif
+@endauth
+
 @stack('scripts')
 </body>
 </html>
