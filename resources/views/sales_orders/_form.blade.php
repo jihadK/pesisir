@@ -167,6 +167,19 @@
                                class="form-control form-control-sm form-control-solid text-end" />
                     </div>
                 </div>
+                <div class="mb-3 fs-7">
+                    <label class="text-muted d-block mb-1">Biaya Lain-lain:</label>
+                    <input type="text" name="other_cost_desc" maxlength="255"
+                           placeholder="Deskripsi (mis. Es batu, plastik tambahan)"
+                           value="{{ old('other_cost_desc', $so->other_cost_desc) }}"
+                           class="form-control form-control-sm form-control-solid mb-1" />
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text">Rp</span>
+                        <input type="text" name="other_cost_amount" id="sm_other_cost"
+                               value="{{ old('other_cost_amount', $so->other_cost_amount ? number_format((float)$so->other_cost_amount, 0, ',', '.') : '0') }}"
+                               class="form-control form-control-sm form-control-solid text-end" />
+                    </div>
+                </div>
                 <div class="separator my-3"></div>
                 <div class="d-flex flex-stack">
                     <span class="text-muted">TOTAL:</span>
@@ -309,7 +322,8 @@ function recalcTotals() {
     const disc     = unmask(document.getElementById('sm_discount').value);
     const shipping = unmask(document.getElementById('sm_shipping').value);
     const packing  = unmask(document.getElementById('sm_packing').value);
-    const total    = Math.max(0, subtotal - disc + shipping + packing);
+    const other    = unmask(document.getElementById('sm_other_cost').value);
+    const total    = Math.max(0, subtotal - disc + shipping + packing + other);
 
     document.getElementById('ft_subtotal').textContent = fmtRp(subtotal);
     document.getElementById('sm_subtotal').textContent = fmtRp(subtotal);
@@ -405,9 +419,11 @@ document.addEventListener('DOMContentLoaded', () => {
     maskRupiah(document.getElementById('sm_discount'));
     maskRupiah(document.getElementById('sm_shipping'));
     maskRupiah(document.getElementById('sm_packing'));
+    maskRupiah(document.getElementById('sm_other_cost'));
     document.getElementById('sm_discount').addEventListener('input', recalcTotals);
     document.getElementById('sm_shipping').addEventListener('input', recalcTotals);
     document.getElementById('sm_packing').addEventListener('input', recalcTotals);
+    document.getElementById('sm_other_cost').addEventListener('input', recalcTotals);
 
     if (EXISTING.length) {
         EXISTING.forEach(addRow);

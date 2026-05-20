@@ -43,6 +43,8 @@ class SalesOrderService
                 'payment_method_id'  => $payload['payment_method_id'] ?? null,
                 'shipping_cost'      => $payload['shipping_cost'] ?? 0,
                 'packing_cost'       => $payload['packing_cost'] ?? 0,
+                'other_cost_amount'  => $payload['other_cost_amount'] ?? 0,
+                'other_cost_desc'    => $payload['other_cost_desc'] ?? null,
                 'discount_amount'    => $payload['discount_amount'] ?? 0,
                 'tax_amount'         => 0,
                 'notes'              => $payload['notes'] ?? null,
@@ -76,6 +78,8 @@ class SalesOrderService
                 'payment_method_id'  => $payload['payment_method_id'] ?? null,
                 'shipping_cost'      => $payload['shipping_cost'] ?? 0,
                 'packing_cost'       => $payload['packing_cost'] ?? 0,
+                'other_cost_amount'  => $payload['other_cost_amount'] ?? 0,
+                'other_cost_desc'    => $payload['other_cost_desc'] ?? null,
                 'discount_amount'    => $payload['discount_amount'] ?? 0,
                 'notes'              => $payload['notes'] ?? null,
             ]);
@@ -238,7 +242,8 @@ class SalesOrderService
         $tax      = (float) $so->tax_amount;
         $shipping = (float) $so->shipping_cost;
         $packing  = (float) $so->packing_cost;
-        $total    = max(0, $subtotal - $disc + $tax + $shipping + $packing);
+        $other    = (float) $so->other_cost_amount;
+        $total    = max(0, $subtotal - $disc + $tax + $shipping + $packing + $other);
 
         $so->update([
             'subtotal'     => $subtotal,

@@ -290,6 +290,9 @@ function downloadAsImage() {
     @if((float)$so->packing_cost > 0)
         <tr><td>Biaya Packing</td><td class="text-end">Rp {{ number_format((float)$so->packing_cost, 0, ',', '.') }}</td></tr>
     @endif
+    @if((float)$so->other_cost_amount > 0)
+        <tr><td>Biaya Lain-lain{{ $so->other_cost_desc ? ' ('.$so->other_cost_desc.')' : '' }}</td><td class="text-end">Rp {{ number_format((float)$so->other_cost_amount, 0, ',', '.') }}</td></tr>
+    @endif
     <tr class="total-row"><td>TOTAL</td><td class="text-end">Rp {{ number_format((float)$so->total_amount, 0, ',', '.') }}</td></tr>
 </table>
 

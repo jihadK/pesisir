@@ -138,6 +138,9 @@
                             @if((float)$so->packing_cost > 0)
                                 <tr><td colspan="4" class="text-end">Biaya Packing</td><td class="text-end pe-4">{{ number_format((float)$so->packing_cost, 0, ',', '.') }}</td></tr>
                             @endif
+                            @if((float)$so->other_cost_amount > 0)
+                                <tr><td colspan="4" class="text-end">Biaya Lain-lain{{ $so->other_cost_desc ? ' ('.$so->other_cost_desc.')' : '' }}</td><td class="text-end pe-4">{{ number_format((float)$so->other_cost_amount, 0, ',', '.') }}</td></tr>
+                            @endif
                             <tr><td colspan="4" class="text-end fs-4">TOTAL</td><td class="text-end pe-4 fs-4 text-primary">Rp {{ number_format((float)$so->total_amount, 0, ',', '.') }}</td></tr>
                         </tfoot>
                     </table>

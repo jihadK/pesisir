@@ -21,7 +21,8 @@ class SalesOrder extends BaseModel
     protected $fillable = [
         'so_number', 'customer_id', 'sales_user_id', 'warehouse_id',
         'order_date', 'delivery_date', 'status',
-        'subtotal', 'discount_amount', 'tax_amount', 'shipping_cost', 'packing_cost', 'total_amount',
+        'subtotal', 'discount_amount', 'tax_amount', 'shipping_cost', 'packing_cost',
+        'other_cost_amount', 'other_cost_desc', 'total_amount',
         'payment_terms_days', 'payment_method_id', 'notes', 'created_by', 'approved_by',
     ];
 
@@ -33,6 +34,7 @@ class SalesOrder extends BaseModel
         'tax_amount'         => 'decimal:2',
         'shipping_cost'      => 'decimal:2',
         'packing_cost'       => 'decimal:2',
+        'other_cost_amount'  => 'decimal:2',
         'total_amount'       => 'decimal:2',
         'payment_terms_days' => 'integer',
     ];

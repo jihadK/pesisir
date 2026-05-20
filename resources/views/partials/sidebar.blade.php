@@ -47,7 +47,7 @@
                     </div>
                 </div>
 
-                <div data-kt-menu-trigger="click" class="menu-item menu-accordion {{ request()->routeIs('uoms.*','grades.*','price_tiers.*','categories.*','products.*') ? 'here show' : '' }}">
+                <div data-kt-menu-trigger="click" class="menu-item menu-accordion {{ request()->routeIs('uoms.*','grades.*','price_tiers.*','categories.*','products.*','stock_cards.*') ? 'here show' : '' }}">
                     <span class="menu-link">
                         <span class="menu-icon"><i class="ki-outline ki-package fs-2"></i></span>
                         <span class="menu-title">Produk &amp; Stok</span>
@@ -60,6 +60,14 @@
                                 <span class="menu-title">Daftar Produk</span>
                             </a>
                         </div>
+                        @if(auth()->user()?->hasPermission('stock_card.view'))
+                        <div class="menu-item">
+                            <a class="menu-link {{ request()->routeIs('stock_cards.*') ? 'active' : '' }}" href="{{ route('stock_cards.index') }}">
+                                <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
+                                <span class="menu-title">Kartu Stok</span>
+                            </a>
+                        </div>
+                        @endif
                         <div class="menu-item">
                             <a class="menu-link {{ request()->routeIs('categories.*') ? 'active' : '' }}" href="{{ route('categories.index') }}">
                                 <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
@@ -205,7 +213,10 @@
                 </div>
                 @endif
 
-                <div data-kt-menu-trigger="click" class="menu-item menu-accordion {{ request()->routeIs('stock_openings.*','stock_adjustments.*','stock_cards.*') ? 'here show' : '' }}">
+                {{-- Menu Stock (Opening + Adjustment) di-hide sesuai UAT. --}}
+                {{-- Kartu Stok dipindah ke menu Produk & Stok. Hapus @if(false) untuk restore. --}}
+                @if(false)
+                <div data-kt-menu-trigger="click" class="menu-item menu-accordion {{ request()->routeIs('stock_openings.*','stock_adjustments.*') ? 'here show' : '' }}">
                     <span class="menu-link">
                         <span class="menu-icon"><i class="ki-outline ki-parcel fs-2"></i></span>
                         <span class="menu-title">Stock</span>
@@ -228,16 +239,9 @@
                             </a>
                         </div>
                         @endif
-                        @if(auth()->user()?->hasPermission('stock_card.view'))
-                        <div class="menu-item">
-                            <a class="menu-link {{ request()->routeIs('stock_cards.*') ? 'active' : '' }}" href="{{ route('stock_cards.index') }}">
-                                <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
-                                <span class="menu-title">Kartu Stok</span>
-                            </a>
-                        </div>
-                        @endif
                     </div>
                 </div>
+                @endif
 
                 {{-- ===== PENJUALAN ===== --}}
                 <div class="menu-item">
@@ -270,7 +274,8 @@
                             </a>
                         </div>
                         @endif
-                        @if(auth()->user()?->hasPermission('delivery_order.view'))
+                        {{-- Delivery Order di-hide sesuai UAT. Hapus @if(false) untuk restore. --}}
+                        @if(false && auth()->user()?->hasPermission('delivery_order.view'))
                         <div class="menu-item">
                             <a class="menu-link {{ request()->routeIs('delivery_orders.*') ? 'active' : '' }}" href="{{ route('delivery_orders.index') }}">
                                 <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
@@ -281,6 +286,8 @@
                     </div>
                 </div>
 
+                {{-- Menu Invoicing di-hide sesuai UAT (Daftar Invoice di Penjualan). Hapus @if(false) untuk restore. --}}
+                @if(false)
                 <div data-kt-menu-trigger="click" class="menu-item menu-accordion {{ request()->routeIs('invoices.*','payments.*') ? 'here show' : '' }}">
                     <span class="menu-link">
                         <span class="menu-icon"><i class="ki-outline ki-bill fs-2"></i></span>
@@ -306,6 +313,7 @@
                         @endif
                     </div>
                 </div>
+                @endif
 
             </div>
         </div>
