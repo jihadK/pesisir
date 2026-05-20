@@ -391,6 +391,17 @@ class SalesOrderService
                     ->lock('FOR UPDATE OF sb')
                     ->get();
 
+                \Illuminate\Support\Facades\Log::info('[markAsPaid] balances scanned', [
+                    'so' => $so->so_number,
+                    'item_product_id' => $item->product_id,
+                    'warehouse_id' => $so->warehouse_id,
+                    'remaining' => $remaining,
+                    'rows' => $balances->map(fn($r) => [
+                        'id' => $r->id, 'batch_id' => $r->batch_id,
+                        'qty' => $r->quantity, 'reserved' => $r->reserved_quantity,
+                    ])->all(),
+                ]);
+
                 $availTotal = (float) $balances->sum(fn($r) => max(0, (float)$r->quantity - (float)$r->reserved_quantity));
                 if ($remaining > $availTotal + 0.001) {
                     throw new \RuntimeException(sprintf(
@@ -408,7 +419,7 @@ class SalesOrderService
                     $take = min($remaining, $availHere);
 
                     $this->movements->createMovement([
-                        'movement_number' => $this->movements->nextDocNumber('SLS'),
+                        'movement_number' => $this->movements->nextDocNumber('SM'),
                         'product_id'      => $item->product_id,
                         'warehouse_id'    => $so->warehouse_id,
                         'batch_id'        => $bal->batch_id,
