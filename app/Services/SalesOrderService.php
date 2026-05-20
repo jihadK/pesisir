@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Product;
 use App\Models\SalesOrder;
 use App\Models\SalesOrderItem;
+use App\Models\StockMovement;
 use Illuminate\Support\Facades\DB;
 
 class SalesOrderService
@@ -320,13 +321,117 @@ class SalesOrderService
         });
     }
 
+    /**
+     * Tandai SO sebagai Paid. Sekaligus deduct stock untuk semua item via FEFO
+     * (jika belum di-ship oleh DO). Kalau status CONFIRMED, release reservasi
+     * yang ada terlebih dahulu sebelum deduct riil.
+     */
     public function markAsPaid(SalesOrder $so): SalesOrder
     {
         if (! $so->isMarkPaidable()) {
             throw new \RuntimeException("SO ini tidak bisa ditandai Paid pada status: {$so->status_label}.");
         }
-        $so->update(['status' => SalesOrder::STATUS_PAID]);
-        return $so;
+
+        return DB::transaction(function () use ($so) {
+            $so->load('items');
+            $alreadyShipped = in_array($so->status, [
+                SalesOrder::STATUS_DELIVERED,
+                SalesOrder::STATUS_INVOICED,
+            ], true);
+
+            // Status DELIVERED/INVOICED: stock sudah ke-deduct sebelumnya oleh DO.
+            // Cukup update status.
+            if ($alreadyShipped) {
+                $so->update(['status' => SalesOrder::STATUS_PAID]);
+                return $so;
+            }
+
+            $wasConfirmed = in_array($so->status, [
+                SalesOrder::STATUS_CONFIRMED,
+                SalesOrder::STATUS_PARTIAL,
+            ], true);
+
+            foreach ($so->items as $item) {
+                $remaining = (float) $item->quantity;
+
+                // Release reservasi dulu kalau ada (CONFIRMED/PARTIAL) supaya
+                // quantity-reserved punya ruang untuk deduct riil.
+                if ($wasConfirmed) {
+                    $resRows = DB::table('tbs_stock_balances as sb')
+                        ->leftJoin('tbm_product_batches as b', 'b.id', '=', 'sb.batch_id')
+                        ->where('sb.product_id', $item->product_id)
+                        ->where('sb.warehouse_id', $so->warehouse_id)
+                        ->where('sb.reserved_quantity', '>', 0)
+                        ->orderByRaw('b.expiry_date IS NULL, b.expiry_date ASC')
+                        ->orderBy('sb.id')
+                        ->select('sb.id', 'sb.reserved_quantity')
+                        ->lock('FOR UPDATE OF sb')
+                        ->get();
+                    $toRelease = (float) $item->quantity;
+                    foreach ($resRows as $r) {
+                        if ($toRelease <= 0) break;
+                        $rel = min($toRelease, (float)$r->reserved_quantity);
+                        DB::table('tbs_stock_balances')->where('id', $r->id)->update([
+                            'reserved_quantity' => DB::raw('reserved_quantity - ' . $rel),
+                            'last_updated_date' => now(),
+                        ]);
+                        $toRelease -= $rel;
+                    }
+                }
+
+                // Deduct riil FEFO — tulis 1 movement per baris balance yang dipakai.
+                $balances = DB::table('tbs_stock_balances as sb')
+                    ->leftJoin('tbm_product_batches as b', 'b.id', '=', 'sb.batch_id')
+                    ->where('sb.product_id', $item->product_id)
+                    ->where('sb.warehouse_id', $so->warehouse_id)
+                    ->where('sb.quantity', '>', 0)
+                    ->orderByRaw('b.expiry_date IS NULL, b.expiry_date ASC')
+                    ->orderBy('sb.id')
+                    ->select('sb.id', 'sb.batch_id', 'sb.quantity', 'sb.reserved_quantity')
+                    ->lock('FOR UPDATE OF sb')
+                    ->get();
+
+                $availTotal = (float) $balances->sum(fn($r) => max(0, (float)$r->quantity - (float)$r->reserved_quantity));
+                if ($remaining > $availTotal + 0.001) {
+                    throw new \RuntimeException(sprintf(
+                        "Stock tidak cukup untuk produk %s. Tersedia: %s, dibutuhkan: %s.",
+                        $item->product->sku ?? "#{$item->product_id}",
+                        number_format($availTotal, 3),
+                        number_format($remaining, 3)
+                    ));
+                }
+
+                foreach ($balances as $bal) {
+                    if ($remaining <= 0) break;
+                    $availHere = max(0, (float)$bal->quantity - (float)$bal->reserved_quantity);
+                    if ($availHere <= 0) continue;
+                    $take = min($remaining, $availHere);
+
+                    $this->movements->createMovement([
+                        'movement_number' => $this->movements->nextDocNumber('SLS'),
+                        'product_id'      => $item->product_id,
+                        'warehouse_id'    => $so->warehouse_id,
+                        'batch_id'        => $bal->batch_id,
+                        'movement_type'   => StockMovement::TYPE_OUT_SALE,
+                        'reference_type'  => 'SALES_ORDER',
+                        'reference_id'    => $so->id,
+                        'quantity'        => -$take,
+                        'uom_id'          => $item->uom_id,
+                        'cost_price'      => 0,
+                        'notes'           => "Paid: SO {$so->so_number}",
+                        'created_by'      => $so->created_by,
+                    ]);
+
+                    $remaining -= $take;
+                }
+                if ($remaining > 0.001) {
+                    throw new \RuntimeException("Deduct gagal untuk {$item->product->sku} — race condition. Coba lagi.");
+                }
+            }
+
+            $so->update(['status' => SalesOrder::STATUS_PAID]);
+            return $so;
+        });
     }
 
     private function getAvailable(int $productId, int $warehouseId): float

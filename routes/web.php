@@ -25,6 +25,38 @@ use App\Http\Controllers\Web\UomController;
 use App\Http\Controllers\Web\WarehouseController;
 use Illuminate\Support\Facades\Route;
 
+// Dev-only: reset opcache via browser. Hit GET /__opcache-reset
+Route::get('/__opcache-reset', function () {
+    $report = [];
+    $report[] = 'PHP: ' . PHP_VERSION;
+    $report[] = 'SAPI: ' . PHP_SAPI;
+    if (function_exists('opcache_get_status')) {
+        $s = @opcache_get_status(false);
+        $report[] = 'opcache enabled: ' . ($s ? 'YES' : 'NO/RESTRICTED');
+        if ($s) $report[] = 'cached scripts: ' . ($s['opcache_statistics']['num_cached_scripts'] ?? '?');
+    } else {
+        $report[] = 'opcache_get_status not available';
+    }
+    if (function_exists('opcache_reset')) {
+        $ok = @opcache_reset();
+        $report[] = 'opcache_reset(): ' . ($ok ? 'OK cleared' : 'FAILED (restrict_api set?)');
+    } else {
+        $report[] = 'opcache_reset not available';
+    }
+    // Hard-invalidate the two service files
+    if (function_exists('opcache_invalidate')) {
+        foreach ([
+            app_path('Services/StockAdjustmentService.php'),
+            app_path('Services/StockMovementService.php'),
+            app_path('Services/SalesOrderService.php'),
+        ] as $f) {
+            $r = @opcache_invalidate($f, true);
+            $report[] = "invalidate $f: " . ($r ? 'OK' : 'FAIL');
+        }
+    }
+    return '<pre>' . implode("\n", $report) . '</pre>';
+});
+
 // Guest
 Route::middleware('guest')->group(function () {
     Route::get('/login',  [LoginController::class, 'showLoginForm'])->name('login');

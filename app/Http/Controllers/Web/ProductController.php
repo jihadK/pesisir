@@ -13,6 +13,7 @@ use App\Models\UnitOfMeasure;
 use App\Models\Warehouse;
 use App\Services\CategoryService;
 use App\Services\ProductService;
+use App\Services\QuickStockUpdateService;
 use App\Services\StockAdjustmentService;
 use App\Services\StockOpeningService;
 use App\Support\Flash;
@@ -281,12 +282,13 @@ class ProductController extends Controller
         $reason = $data['direction'] === 'in' ? 'count_in' : 'count_out';
 
         try {
-            $movement = $this->stockAdjustments->applyAdjustment([
+            // Pakai service baru (QuickStockUpdateService) — terpisah dari
+            // StockAdjustmentService untuk hindari class lama yang ke-cache opcache.
+            $quickStock = app(QuickStockUpdateService::class);
+            $movement = $quickStock->apply([
                 'warehouse_id' => $warehouse->id,
                 'product_id'   => $product->id,
-                'batch_id'     => null,
                 'direction'    => $data['direction'],
-                'reason'       => $reason,
                 'quantity'     => $data['quantity'],
                 'notes'        => $data['notes'],
                 'created_by'   => $request->user()->id,

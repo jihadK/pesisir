@@ -78,6 +78,33 @@ class StockMovementService
             throw new \InvalidArgumentException('quantity tidak boleh 0.');
         }
 
+        \Illuminate\Support\Facades\Log::info('[StockMovement] createMovement', $data);
+        // Defensive guard: kalau movement negatif (OUT), pastikan saldo baris
+        // (product, warehouse, batch_id) tidak akan jadi negatif. Cek baris
+        // SPESIFIK — bukan sum semua batch — sesuai unique key trigger DB
+        // (product_id, warehouse_id, COALESCE(batch_id, 0)).
+        $qty = (float) $data['quantity'];
+        if ($qty < 0) {
+            $batchId = $data['batch_id'] ?? null;
+            $balQ = DB::table('tbs_stock_balances')
+                ->where('product_id', $data['product_id'])
+                ->where('warehouse_id', $data['warehouse_id']);
+            if ($batchId !== null) {
+                $balQ->where('batch_id', (int) $batchId);
+            } else {
+                $balQ->whereNull('batch_id');
+            }
+            $rows = $balQ->lockForUpdate()->get(['quantity']);
+            $current = (float) $rows->sum('quantity');
+            if (abs($qty) > $current) {
+                throw new \RuntimeException(sprintf(
+                    'Stock tidak cukup pada baris ini (saldo: %s, diminta: %s).',
+                    number_format($current, 3),
+                    number_format(abs($qty), 3)
+                ));
+            }
+        }
+
         return StockMovement::create([
             'movement_number' => $data['movement_number'],
             'product_id'      => $data['product_id'],
@@ -146,6 +173,13 @@ class StockMovementService
     /**
      * Total qty stock saat ini untuk kombinasi produk+warehouse (semua batch).
      */
+    /**
+     * Saldo stock untuk baris (product, warehouse, batch_id) tertentu.
+     * Penting: kalau $batchId === null, harus filter WHERE batch_id IS NULL —
+     * BUKAN sum semua batch — karena trigger update baris keyed by
+     * (product_id, warehouse_id, COALESCE(batch_id, 0)). Sum-all akan menipu
+     * validasi & menyebabkan baris null jadi negatif (chk_sb_qty_nonneg).
+     */
     public function getCurrentBalance(int $productId, int $warehouseId, ?int $batchId = null): float
     {
         $q = DB::table('tbs_stock_balances')
@@ -153,6 +187,8 @@ class StockMovementService
             ->where('warehouse_id', $warehouseId);
         if ($batchId !== null) {
             $q->where('batch_id', $batchId);
+        } else {
+            $q->whereNull('batch_id');
         }
         return (float) $q->sum('quantity');
     }
