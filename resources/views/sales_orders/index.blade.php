@@ -10,6 +10,69 @@
 @endsection
 
 @section('content')
+
+@if($isPaidView && $summary)
+<div class="row g-4 mb-5">
+    <div class="col-md-4">
+        <div class="card card-flush h-100 shadow-sm" style="background: linear-gradient(135deg,#fff5f0,#ffd5b8); border:0;">
+            <div class="card-body d-flex align-items-center">
+                <div class="symbol symbol-50px me-4">
+                    <span class="symbol-label bg-danger bg-opacity-25 text-danger">
+                        <i class="ki-outline ki-purchase fs-2x text-danger"></i>
+                    </span>
+                </div>
+                <div class="flex-grow-1">
+                    <div class="text-muted fs-7 fw-semibold text-uppercase">Total HPP</div>
+                    <div class="fs-2 fw-bolder text-dark">Rp {{ number_format((float)$summary['total_hpp'], 0, ',', '.') }}</div>
+                    <div class="fs-8 text-muted">Modal pembelian produk terjual</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card card-flush h-100 shadow-sm" style="background: linear-gradient(135deg,#e7f4ff,#bcd8ff); border:0;">
+            <div class="card-body d-flex align-items-center">
+                <div class="symbol symbol-50px me-4">
+                    <span class="symbol-label bg-primary bg-opacity-25 text-primary">
+                        <i class="ki-outline ki-handcart fs-2x text-primary"></i>
+                    </span>
+                </div>
+                <div class="flex-grow-1">
+                    <div class="text-muted fs-7 fw-semibold text-uppercase">Total Penjualan</div>
+                    <div class="fs-2 fw-bolder text-dark">Rp {{ number_format((float)$summary['total_sales'], 0, ',', '.') }}</div>
+                    <div class="fs-8 text-muted">Dari {{ number_format($summary['count'], 0, ',', '.') }} order terbayar</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        @php
+            $labaPositif = $summary['laba'] >= 0;
+            $gradient = $labaPositif ? 'linear-gradient(135deg,#e8fbef,#a4e7bb)' : 'linear-gradient(135deg,#fdecea,#f7b8b1)';
+            $iconBg   = $labaPositif ? 'bg-success' : 'bg-danger';
+            $iconCol  = $labaPositif ? 'text-success' : 'text-danger';
+        @endphp
+        <div class="card card-flush h-100 shadow-sm" style="background: {{ $gradient }}; border:0;">
+            <div class="card-body d-flex align-items-center">
+                <div class="symbol symbol-50px me-4">
+                    <span class="symbol-label {{ $iconBg }} bg-opacity-25 {{ $iconCol }}">
+                        <i class="ki-outline ki-chart-line-up fs-2x {{ $iconCol }}"></i>
+                    </span>
+                </div>
+                <div class="flex-grow-1">
+                    <div class="text-muted fs-7 fw-semibold text-uppercase">Laba Bersih</div>
+                    <div class="fs-2 fw-bolder text-dark">Rp {{ number_format((float)$summary['laba'], 0, ',', '.') }}</div>
+                    <div class="fs-8 text-muted">
+                        Margin <span class="fw-bold {{ $iconCol }}">{{ number_format((float)$summary['margin_pct'], 1, ',', '.') }}%</span>
+                        @if(! $labaPositif) <span class="badge badge-light-danger ms-1">Rugi</span> @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+
 <div class="card">
     <div class="card-header border-0 pt-6">
         <div class="card-title flex-column">

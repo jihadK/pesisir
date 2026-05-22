@@ -63,12 +63,19 @@ class ProductController extends Controller
             ->orderBy('sku')
             ->get();
 
-        // Compute total stock per product (1 query, untuk performance)
-        $stockMap = DB::table('tbs_stock_balances')
-            ->select('product_id', DB::raw('SUM(quantity) AS total_qty'))
-            ->whereIn('product_id', $products->pluck('id'))
-            ->groupBy('product_id')
-            ->pluck('total_qty', 'product_id');
+        // Stok per produk dihitung HANYA di warehouse default (WH-LAMONGAN).
+        // Tampilkan AVAILABLE (quantity - reserved) bukan raw quantity supaya
+        // konsisten dengan quick-adjust yang juga pakai available.
+        $defaultWh = $this->getDefaultWarehouse();
+        $stockMap  = collect();
+        if ($defaultWh) {
+            $stockMap = DB::table('tbs_stock_balances')
+                ->select('product_id', DB::raw('SUM(GREATEST(quantity - reserved_quantity, 0)) AS available_qty'))
+                ->whereIn('product_id', $products->pluck('id'))
+                ->where('warehouse_id', $defaultWh->id)
+                ->groupBy('product_id')
+                ->pluck('available_qty', 'product_id');
+        }
 
         $products->each(fn ($p) => $p->total_stock = (float) ($stockMap[$p->id] ?? 0));
 

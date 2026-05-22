@@ -44,10 +44,37 @@ class SalesOrderController extends Controller
             ->paginate(50)
             ->withQueryString();
 
+        // Summary HPP / Penjualan / Laba — hanya untuk view "Daftar Invoice" (status=paid).
+        // Hitung berdasarkan SEMUA SO yang match filter (bukan halaman saja).
+        $summary = null;
+        if (($filters['status'] ?? '') === 'paid') {
+            $matchingIds = SalesOrder::query()
+                ->search($filters['q'] ?: null)
+                ->ofStatus($filters['status'])
+                ->betweenDates($filters['date_from'] ?: null, $filters['date_to'] ?: null)
+                ->pluck('id');
+
+            $totalSales = (float) SalesOrder::whereIn('id', $matchingIds)->sum('total_amount');
+            $totalHpp = (float) DB::table('tbr_sales_order_items as soi')
+                ->join('tbm_products as p', 'p.id', '=', 'soi.product_id')
+                ->whereIn('soi.so_id', $matchingIds)
+                ->sum(DB::raw('soi.quantity * COALESCE(p.default_cost_price, 0)'));
+            $laba = $totalSales - $totalHpp;
+
+            $summary = [
+                'count'       => $matchingIds->count(),
+                'total_sales' => $totalSales,
+                'total_hpp'   => $totalHpp,
+                'laba'        => $laba,
+                'margin_pct'  => $totalSales > 0 ? ($laba / $totalSales * 100) : 0,
+            ];
+        }
+
         return view('sales_orders.index', [
             'orders'   => $orders,
             'filters'  => $filters,
             'statuses' => SalesOrder::statusLabels(),
+            'summary'  => $summary,
         ]);
     }
 

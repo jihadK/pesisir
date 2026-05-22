@@ -97,17 +97,8 @@ class ProductService
             ];
         }
 
-        $activePO = DB::table('tbr_purchase_order_items as poi')
-            ->join('tbr_purchase_orders as po', 'po.id', '=', 'poi.po_id')
-            ->where('poi.product_id', $p->id)
-            ->whereIn('po.status', ['draft', 'submitted', 'partial'])
-            ->count();
-        if ($activePO > 0) {
-            return [
-                'allowed' => false,
-                'reason'  => "Produk masih ada di {$activePO} PO aktif.",
-            ];
-        }
+        // Phase 6: PO items tidak lagi reference product spesifik (pakai
+        // category_id untuk raw material), jadi skip cek PO aktif.
 
         $activeSO = DB::table('tbr_sales_order_items as soi')
             ->join('tbr_sales_orders as so', 'so.id', '=', 'soi.so_id')
@@ -262,18 +253,9 @@ class ProductService
 
     public function getPurchaseHistory(Product $p)
     {
-        return DB::table('tbr_purchase_order_items as poi')
-            ->join('tbr_purchase_orders as po', 'po.id', '=', 'poi.po_id')
-            ->join('tbm_suppliers as s', 's.id', '=', 'po.supplier_id')
-            ->select(
-                'po.id', 'po.po_number', 'po.po_date', 'po.status',
-                'poi.quantity', 'poi.received_quantity', 'poi.unit_price',
-                's.name as supplier_name', 's.code as supplier_code'
-            )
-            ->where('poi.product_id', $p->id)
-            ->orderByDesc('po.po_date')
-            ->limit(20)
-            ->get();
+        // Phase 6: PO items tidak lagi reference product spesifik
+        // (pakai category raw material), jadi return collection kosong.
+        return collect();
     }
 
     public function getSalesHistory(Product $p)
