@@ -15,6 +15,7 @@ class SalesOrder extends BaseModel
     public const STATUS_PARTIAL   = 'partial';
     public const STATUS_DELIVERED = 'delivered';
     public const STATUS_INVOICED  = 'invoiced';
+    public const STATUS_FULFILLED = 'fulfilled';
     public const STATUS_PAID      = 'paid';
     public const STATUS_CANCELLED = 'cancelled';
 
@@ -24,11 +25,14 @@ class SalesOrder extends BaseModel
         'subtotal', 'discount_amount', 'tax_amount', 'shipping_cost', 'packing_cost',
         'other_cost_amount', 'other_cost_desc', 'total_amount',
         'payment_terms_days', 'payment_method_id', 'notes', 'created_by', 'approved_by',
+        'due_date', 'fulfilled_at',
     ];
 
     protected $casts = [
         'order_date'         => 'date',
         'delivery_date'      => 'date',
+        'due_date'           => 'date',
+        'fulfilled_at'       => 'datetime',
         'subtotal'           => 'decimal:2',
         'discount_amount'    => 'decimal:2',
         'tax_amount'         => 'decimal:2',
@@ -75,6 +79,7 @@ class SalesOrder extends BaseModel
             self::STATUS_PARTIAL   => 'Partial Delivered',
             self::STATUS_DELIVERED => 'Delivered',
             self::STATUS_INVOICED  => 'Invoiced',
+            self::STATUS_FULFILLED => 'Fulfilled (Piutang)',
             self::STATUS_PAID      => 'Paid',
             self::STATUS_CANCELLED => 'Cancelled',
         ];
@@ -93,6 +98,7 @@ class SalesOrder extends BaseModel
             self::STATUS_PARTIAL   => 'badge-light-warning',
             self::STATUS_DELIVERED => 'badge-light-info',
             self::STATUS_INVOICED  => 'badge-light-success',
+            self::STATUS_FULFILLED => 'badge-light-warning',
             self::STATUS_PAID      => 'badge-light-success',
             self::STATUS_CANCELLED => 'badge-light-danger',
             default                => 'badge-light',
@@ -114,13 +120,31 @@ class SalesOrder extends BaseModel
         return in_array($this->status, [self::STATUS_DRAFT, self::STATUS_CONFIRMED], true);
     }
 
-    public function isMarkPaidable(): bool
+    /**
+     * Fulfillable = Draft yang siap dikirim (stock akan deduct).
+     */
+    public function isFulfillable(): bool
     {
-        return in_array($this->status, [self::STATUS_DRAFT, self::STATUS_CONFIRMED, self::STATUS_PARTIAL, self::STATUS_DELIVERED, self::STATUS_INVOICED], true);
+        return $this->status === self::STATUS_DRAFT;
     }
 
-    public function isPaid(): bool
+    /**
+     * Mark-as-Paid = sudah Fulfilled (tagihan keluar) tinggal lunas.
+     * (Legacy: Draft/Confirmed dll juga boleh, untuk customer non-tempo.)
+     */
+    public function isMarkPaidable(): bool
     {
-        return $this->status === self::STATUS_PAID;
+        return in_array($this->status, [
+            self::STATUS_DRAFT, self::STATUS_CONFIRMED, self::STATUS_PARTIAL,
+            self::STATUS_DELIVERED, self::STATUS_INVOICED, self::STATUS_FULFILLED,
+        ], true);
+    }
+
+    public function isFulfilled(): bool { return $this->status === self::STATUS_FULFILLED; }
+    public function isPaid(): bool      { return $this->status === self::STATUS_PAID; }
+
+    public function isOverdue(): bool
+    {
+        return $this->isFulfilled() && $this->due_date && $this->due_date->isPast();
     }
 }

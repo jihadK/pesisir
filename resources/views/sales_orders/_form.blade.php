@@ -214,7 +214,27 @@
 const PRODUCTS = @json($productData);
 const EXISTING = @json($existingItems);
 const AVAILABLE_STOCK_URL = "{{ route('sales_orders.available-stock') }}";
+const RESOLVED_PRICE_URL  = "{{ route('sales_orders.resolved-price') }}";
 const CSRF = document.querySelector('meta[name=csrf-token]')?.content;
+
+// Cache resolved price per (customer, product)
+const PRICE_CACHE = {};
+async function fetchResolvedPrice(customerId, productId) {
+    if (! customerId || ! productId) return null;
+    const key = `${customerId}:${productId}`;
+    if (PRICE_CACHE[key]) return PRICE_CACHE[key];
+    try {
+        const res = await fetch(`${RESOLVED_PRICE_URL}?customer_id=${customerId}&product_id=${productId}`, {
+            headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF }
+        });
+        const json = await res.json();
+        if (json.resCode === '00') {
+            PRICE_CACHE[key] = json.data;
+            return json.data;
+        }
+    } catch (e) {}
+    return null;
+}
 
 // Build option label dengan pack info
 function productOptionLabel(p) {
@@ -370,21 +390,32 @@ function addRow(prefill = null) {
         placeholder: 'Pilih produk...',
         width: '100%',
         dropdownParent: $tr.closest('.card')
-    }).on('change', function () {
+    }).on('change', async function () {
         const p = PRODUCTS.find(x => x.id == this.value);
         const packInfoEl = $tr.find('.pack-info')[0];
         if (p) {
             const priceEl = $tr.find('.price')[0];
             const qtyEl   = $tr.find('.qty')[0];
-            if (! priceEl.value) {
-                priceEl.value = p.price ? Math.round(p.price).toLocaleString('id-ID') : '';
+
+            // Resolve price via API kalau customer sudah dipilih (kontrak > default)
+            const custEl = document.querySelector('select[name="customer_id"]');
+            const customerId = custEl?.value;
+            let resolved = null;
+            if (customerId) resolved = await fetchResolvedPrice(customerId, p.id);
+            const finalPrice = resolved?.price ?? p.price;
+
+            if (! priceEl.value || resolved) {
+                priceEl.value = finalPrice ? Math.round(finalPrice).toLocaleString('id-ID') : '';
             }
+            // Tampilkan source di pack-info kalau ada kontrak
+            const srcBadge = resolved?.source === 'contract'
+                ? '<span class="badge badge-light-success ms-1">Harga Kontrak</span>' : '';
             if (! qtyEl.value) qtyEl.value = '1';
             // tampilkan pack info di bawah dropdown produk
             const packs = [];
             if (p.pack_content) packs.push(`<i class="ki-outline ki-element-equal-1 fs-8"></i> ${p.pack_content}`);
             if (p.pack_weight) packs.push(`<i class="ki-outline ki-scale fs-8"></i> ${p.pack_weight}`);
-            packInfoEl.innerHTML = packs.join(' · ');
+            packInfoEl.innerHTML = packs.join(' · ') + srcBadge;
             recalcRow(tr);
             updateStockInfoRow(tr);
         } else {
@@ -433,15 +464,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('btn_add_row').addEventListener('click', () => addRow());
 
-    // Auto-fill payment_terms dari customer
+    // Auto-fill payment_terms dari customer + refresh harga existing rows
     const custEl = document.querySelector('select[name="customer_id"]');
     if (custEl) {
-        window.jQuery(custEl).on('change', function () {
+        window.jQuery(custEl).on('change', async function () {
             const sel = this.options[this.selectedIndex];
             const days = sel.dataset.paymentTerms;
             if (days !== undefined && days !== '') {
                 const ptEl = document.querySelector('input[name="payment_terms_days"]');
                 if (ptEl) ptEl.value = days;
+            }
+            // Refresh harga semua row yang sudah ada produknya
+            const customerId = this.value;
+            if (! customerId) return;
+            const rows = document.querySelectorAll('#items_body tr');
+            for (const tr of rows) {
+                const prodId = tr.querySelector('.prod-sel')?.value;
+                if (! prodId) continue;
+                const r = await fetchResolvedPrice(customerId, prodId);
+                if (! r) continue;
+                const priceEl = tr.querySelector('.price');
+                priceEl.value = Math.round(r.price).toLocaleString('id-ID');
+                const packEl = tr.querySelector('.pack-info');
+                const existing = packEl.innerHTML.replace(/<span class="badge[^>]*>[^<]*<\/span>/g, '');
+                const badge = r.source === 'contract' ? '<span class="badge badge-light-success ms-1">Harga Kontrak</span>' : '';
+                packEl.innerHTML = existing + badge;
+                recalcRow(tr);
             }
         });
     }

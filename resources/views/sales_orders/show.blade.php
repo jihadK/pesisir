@@ -25,6 +25,17 @@
                 <div class="row mb-3"><div class="col-3 text-muted">Tanggal Kirim</div><div class="col-9 fw-bold">{{ $so->delivery_date?->format('d M Y') ?? '—' }}</div></div>
                 <div class="row mb-3"><div class="col-3 text-muted">Customer</div><div class="col-9 fw-bold">{{ $so->customer->code }} — {{ $so->customer->name }}</div></div>
                 <div class="row mb-3"><div class="col-3 text-muted">Sales</div><div class="col-9">{{ $so->salesUser?->full_name ?? '—' }}</div></div>
+                @if($so->isFulfilled() || $so->due_date)
+                    <div class="row mb-3"><div class="col-3 text-muted">Jatuh Tempo</div>
+                        <div class="col-9">
+                            <span class="fw-bold {{ $so->isOverdue() ? 'text-danger' : '' }}">{{ $so->due_date?->format('d M Y') ?? '—' }}</span>
+                            @if($so->isOverdue())<span class="badge badge-light-danger ms-2">OVERDUE</span>@endif
+                        </div>
+                    </div>
+                @endif
+                @if($so->payment_terms_days > 0)
+                    <div class="row mb-3"><div class="col-3 text-muted">Term Pembayaran</div><div class="col-9">{{ $so->payment_terms_days }} hari</div></div>
+                @endif
                 <div class="row mb-3">
                     <div class="col-3 text-muted">Metode Pembayaran</div>
                     <div class="col-9">
@@ -169,11 +180,20 @@
                     </a>
                 @endif
 
+                @if($so->isFulfillable() && ($so->payment_terms_days ?? 0) > 0 && auth()->user()?->hasPermission('sales_order.fulfill'))
+                    <form method="POST" action="{{ route('sales_orders.fulfill', $so) }}" onsubmit="return confirm('Tandai Order ini sebagai Fulfilled? Barang akan dikirim (stock dideduct) dan customer berhutang sampai jatuh tempo.')">
+                        @csrf
+                        <button type="submit" class="btn btn-warning w-100">
+                            <i class="ki-outline ki-truck fs-2"></i> Fulfill (Kirim, Tempo {{ $so->payment_terms_days }} hari)
+                        </button>
+                    </form>
+                @endif
+
                 @if($so->isMarkPaidable() && auth()->user()?->hasPermission('sales_order.mark_paid'))
                     <form method="POST" action="{{ route('sales_orders.mark-paid', $so) }}" onsubmit="return confirm('Tandai Order ini sebagai sudah dibayar?')">
                         @csrf
                         <button type="submit" class="btn btn-success w-100">
-                            <i class="ki-outline ki-wallet fs-2"></i> Paid (Terbayar)
+                            <i class="ki-outline ki-wallet fs-2"></i> {{ $so->isFulfilled() ? 'Tandai Lunas' : 'Paid (Terbayar)' }}
                         </button>
                     </form>
                 @endif

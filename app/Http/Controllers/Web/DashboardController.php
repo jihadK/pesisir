@@ -41,6 +41,18 @@ class DashboardController extends Controller
         $unpaidTotal = (float) SalesOrder::where('status', SalesOrder::STATUS_DRAFT)->sum('total_amount');
         $unpaidCount = (int) SalesOrder::where('status', SalesOrder::STATUS_DRAFT)->count();
 
+        // ===== Piutang (AR) =====
+        $today = \Carbon\Carbon::today();
+        $arBase = SalesOrder::where('status', SalesOrder::STATUS_FULFILLED);
+        $arWidgets = [
+            'outstanding'   => (float) $arBase->clone()->sum('total_amount'),
+            'count'         => (int)   $arBase->clone()->count(),
+            'overdue'       => (float) $arBase->clone()->whereDate('due_date', '<', $today)->sum('total_amount'),
+            'overdue_count' => (int)   $arBase->clone()->whereDate('due_date', '<', $today)->count(),
+            'due7'          => (float) $arBase->clone()->whereBetween('due_date', [$today, $today->copy()->addDays(6)])->sum('total_amount'),
+            'due7_count'    => (int)   $arBase->clone()->whereBetween('due_date', [$today, $today->copy()->addDays(6)])->count(),
+        ];
+
         return view('dashboard', [
             'period'          => $period,
             'periodSummary'   => $periodSummary,
@@ -50,6 +62,7 @@ class DashboardController extends Controller
             'unpaidOrders'    => $unpaidOrders,
             'unpaidTotal'     => $unpaidTotal,
             'unpaidCount'     => $unpaidCount,
+            'arWidgets'       => $arWidgets,
         ]);
     }
 

@@ -327,9 +327,29 @@ class SalesOrderService
     }
 
     /**
-     * Tandai SO sebagai Paid. Sekaligus deduct stock untuk semua item via FEFO
-     * (jika belum di-ship oleh DO). Kalau status CONFIRMED, release reservasi
-     * yang ada terlebih dahulu sebelum deduct riil.
+     * Fulfill SO — barang keluar (stock deduct FEFO) + set due_date.
+     * Dipakai untuk customer tempo: barang dikirim dulu, bayar belakangan.
+     */
+    public function markAsFulfilled(SalesOrder $so): SalesOrder
+    {
+        if (! $so->isFulfillable()) {
+            throw new \RuntimeException("SO ini tidak bisa di-Fulfill pada status: {$so->status_label}.");
+        }
+        $this->deductStockForSO($so);
+
+        $dueDate = $so->order_date->copy()->addDays((int) ($so->payment_terms_days ?? 0));
+        $so->update([
+            'status'       => SalesOrder::STATUS_FULFILLED,
+            'fulfilled_at' => now(),
+            'due_date'     => $dueDate->toDateString(),
+        ]);
+        return $so;
+    }
+
+    /**
+     * Tandai SO sebagai Paid (lunas). Stock sudah/akan ke-deduct sesuai status:
+     *   - Draft/Confirmed/Partial          → deduct stock + set Paid
+     *   - Fulfilled/Delivered/Invoiced     → cukup update status (stock sudah out)
      */
     public function markAsPaid(SalesOrder $so): SalesOrder
     {
@@ -338,19 +358,32 @@ class SalesOrderService
         }
 
         return DB::transaction(function () use ($so) {
-            $so->load('items');
             $alreadyShipped = in_array($so->status, [
+                SalesOrder::STATUS_FULFILLED,
                 SalesOrder::STATUS_DELIVERED,
                 SalesOrder::STATUS_INVOICED,
             ], true);
 
-            // Status DELIVERED/INVOICED: stock sudah ke-deduct sebelumnya oleh DO.
-            // Cukup update status.
+            // Stock sudah keluar → cukup update status.
             if ($alreadyShipped) {
                 $so->update(['status' => SalesOrder::STATUS_PAID]);
                 return $so;
             }
 
+            $this->deductStockForSO($so);
+            $so->update(['status' => SalesOrder::STATUS_PAID]);
+            return $so;
+        });
+    }
+
+    /**
+     * Inti deduct stock FEFO + release reservasi lama (kalau ada).
+     * Helper internal yang dipakai markAsFulfilled & markAsPaid (jalur lama).
+     */
+    private function deductStockForSO(SalesOrder $so): void
+    {
+        DB::transaction(function () use ($so) {
+            $so->load('items');
             $wasConfirmed = in_array($so->status, [
                 SalesOrder::STATUS_CONFIRMED,
                 SalesOrder::STATUS_PARTIAL,
@@ -444,9 +477,6 @@ class SalesOrderService
                     throw new \RuntimeException("Deduct gagal untuk {$item->product->sku} — race condition. Coba lagi.");
                 }
             }
-
-            $so->update(['status' => SalesOrder::STATUS_PAID]);
-            return $so;
         });
     }
 

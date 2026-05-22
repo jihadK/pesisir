@@ -253,7 +253,7 @@
                 @php
                     $isPaidView = request()->routeIs('sales_orders.index') && request('status') === 'paid';
                 @endphp
-                <div data-kt-menu-trigger="click" class="menu-item menu-accordion {{ request()->routeIs('sales_orders.*','delivery_orders.*') ? 'here show' : '' }}">
+                <div data-kt-menu-trigger="click" class="menu-item menu-accordion {{ request()->routeIs('sales_orders.*','delivery_orders.*','receivables.*','customer_prices.*') ? 'here show' : '' }}">
                     <span class="menu-link">
                         <span class="menu-icon"><i class="ki-outline ki-basket fs-2"></i></span>
                         <span class="menu-title">Penjualan</span>
@@ -271,6 +271,22 @@
                             <a class="menu-link {{ $isPaidView ? 'active' : '' }}" href="{{ route('sales_orders.index', ['status' => 'paid']) }}">
                                 <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
                                 <span class="menu-title">Daftar Invoice</span>
+                            </a>
+                        </div>
+                        @endif
+                        @if(auth()->user()?->hasPermission('receivable.view'))
+                        <div class="menu-item">
+                            <a class="menu-link {{ request()->routeIs('receivables.*') ? 'active' : '' }}" href="{{ route('receivables.index') }}">
+                                <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
+                                <span class="menu-title">Piutang</span>
+                            </a>
+                        </div>
+                        @endif
+                        @if(auth()->user()?->hasPermission('customer_price.view'))
+                        <div class="menu-item">
+                            <a class="menu-link {{ request()->routeIs('customer_prices.*') ? 'active' : '' }}" href="{{ route('customer_prices.index') }}">
+                                <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
+                                <span class="menu-title">Kontrak Harga</span>
                             </a>
                         </div>
                         @endif

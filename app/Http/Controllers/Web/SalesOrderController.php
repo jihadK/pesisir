@@ -11,6 +11,7 @@ use App\Models\PaymentMethod;
 use App\Models\Product;
 use App\Models\SalesOrder;
 use App\Models\Warehouse;
+use App\Services\PriceResolver;
 use App\Services\SalesOrderService;
 use App\Support\Flash;
 use App\Support\ResponseCode;
@@ -23,7 +24,29 @@ class SalesOrderController extends Controller
 {
     use ApiResponse;
 
-    public function __construct(private readonly SalesOrderService $service) {}
+    public function __construct(
+        private readonly SalesOrderService $service,
+        private readonly PriceResolver $priceResolver,
+    ) {}
+
+    /**
+     * AJAX: resolved price untuk pasangan customer × product.
+     */
+    public function resolvedPrice(Request $request)
+    {
+        $customerId = $request->integer('customer_id');
+        $productId  = $request->integer('product_id');
+        if (! $customerId || ! $productId) {
+            return $this->failBusinessRule('customer_id & product_id wajib.');
+        }
+        $r = $this->priceResolver->resolve($customerId, $productId);
+        return $this->ok([
+            'price'        => $r['price'],
+            'source'       => $r['source'],
+            'source_label' => $r['source'] === 'contract' ? 'Harga Kontrak' : 'Harga Default',
+            'contract_id'  => $r['contract_id'],
+        ]);
+    }
 
     public function index(Request $request): View
     {
@@ -254,6 +277,23 @@ class SalesOrderController extends Controller
         }
 
         return back()->with('flash', Flash::ok('Item berhasil ditambahkan ke order.', 'Item Ditambahkan'));
+    }
+
+    public function fulfill(Request $request, SalesOrder $salesOrder): RedirectResponse
+    {
+        if (! $request->user()?->hasPermission('sales_order.fulfill')) {
+            return back()->with('flash', Flash::err('Tidak punya akses Fulfill.', ResponseCode::FORBIDDEN));
+        }
+        try {
+            $this->service->markAsFulfilled($salesOrder);
+        } catch (\Throwable $e) {
+            return back()->with('flash', Flash::err($e->getMessage(), ResponseCode::BUSINESS_RULE_FAILED, 'Gagal Fulfill'));
+        }
+        $due = $salesOrder->fresh()->due_date?->format('d M Y');
+        return back()->with('flash', Flash::ok(
+            "Order {$salesOrder->so_number} sudah Fulfilled. Jatuh tempo: {$due}.",
+            'Fulfilled'
+        ));
     }
 
     public function markPaid(Request $request, SalesOrder $salesOrder): RedirectResponse

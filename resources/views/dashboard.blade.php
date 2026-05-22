@@ -155,6 +155,61 @@
     </div>
 </div>
 
+{{-- ===== Piutang widgets ===== --}}
+<div class="row g-4 mb-5">
+    <div class="col-12">
+        <h4 class="fw-bolder mb-3"><i class="ki-outline ki-bill fs-2 me-2"></i> Piutang (Outstanding AR)</h4>
+    </div>
+    <div class="col-md-4">
+        <a href="{{ route('receivables.index') }}" class="text-decoration-none">
+            <div class="card card-flush h-100 shadow-sm" style="background: linear-gradient(135deg,#e7f4ff,#bcd8ff); border:0; cursor:pointer;">
+                <div class="card-body d-flex align-items-center">
+                    <div class="symbol symbol-50px me-4">
+                        <span class="symbol-label bg-primary bg-opacity-25 text-primary"><i class="ki-outline ki-bill fs-2x"></i></span>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="text-muted fs-7 fw-semibold text-uppercase">Total Piutang</div>
+                        <div class="fs-2 fw-bolder text-dark">Rp {{ number_format($arWidgets['outstanding'], 0, ',', '.') }}</div>
+                        <div class="fs-8 text-muted">{{ number_format($arWidgets['count']) }} order Fulfilled menunggu pelunasan</div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{{ route('receivables.index', ['aging' => 'current']) }}" class="text-decoration-none">
+            <div class="card card-flush h-100 shadow-sm" style="background: linear-gradient(135deg,#fff9e6,#ffe9a8); border:0; cursor:pointer;">
+                <div class="card-body d-flex align-items-center">
+                    <div class="symbol symbol-50px me-4">
+                        <span class="symbol-label bg-warning bg-opacity-25 text-warning"><i class="ki-outline ki-time fs-2x"></i></span>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="text-muted fs-7 fw-semibold text-uppercase">Jatuh Tempo 7 Hari</div>
+                        <div class="fs-2 fw-bolder text-dark">Rp {{ number_format($arWidgets['due7'], 0, ',', '.') }}</div>
+                        <div class="fs-8 text-muted">{{ number_format($arWidgets['due7_count']) }} order due dalam 1 minggu</div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{{ route('receivables.index', ['aging' => 'overdue']) }}" class="text-decoration-none">
+            <div class="card card-flush h-100 shadow-sm" style="background: linear-gradient(135deg,#fdecea,#f7b8b1); border:0; cursor:pointer;">
+                <div class="card-body d-flex align-items-center">
+                    <div class="symbol symbol-50px me-4">
+                        <span class="symbol-label bg-danger bg-opacity-25 text-danger"><i class="ki-outline ki-warning-2 fs-2x"></i></span>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="text-muted fs-7 fw-semibold text-uppercase">Overdue (Telat Bayar)</div>
+                        <div class="fs-2 fw-bolder text-dark">Rp {{ number_format($arWidgets['overdue'], 0, ',', '.') }}</div>
+                        <div class="fs-8 text-muted">{{ number_format($arWidgets['overdue_count']) }} order sudah lewat tempo</div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
 {{-- ===== Bottom row: Stock low + Unpaid orders ===== --}}
 <div class="row g-4">
     <div class="col-md-4">

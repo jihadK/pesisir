@@ -4,6 +4,7 @@ use App\Http\Controllers\Web\Auth\LoginController;
 use App\Http\Controllers\Web\CategoryController;
 use App\Http\Controllers\Web\CleaningServiceController;
 use App\Http\Controllers\Web\CustomerController;
+use App\Http\Controllers\Web\CustomerPriceController;
 use App\Http\Controllers\Web\DashboardController;
 use App\Http\Controllers\Web\DeliveryOrderController;
 use App\Http\Controllers\Web\EmployeeController;
@@ -14,6 +15,7 @@ use App\Http\Controllers\Web\PaymentMethodController;
 use App\Http\Controllers\Web\PriceTierController;
 use App\Http\Controllers\Web\ProductController;
 use App\Http\Controllers\Web\PurchaseOrderController;
+use App\Http\Controllers\Web\ReceivableController;
 use App\Http\Controllers\Web\SalesOrderController;
 use App\Http\Controllers\Web\ServiceRateController;
 use App\Http\Controllers\Web\SuppliesPurchaseController;
@@ -233,10 +235,34 @@ Route::middleware('auth')->group(function () {
         });
     });
 
+    // ========== SALES — Piutang (Receivables) ==========
+    Route::prefix('receivables')->name('receivables.')->middleware('permission:receivable.view')->group(function () {
+        Route::get('/', [ReceivableController::class, 'index'])->name('index');
+    });
+
+    // ========== SALES — Kontrak Harga Customer ==========
+    Route::prefix('customer-prices')->name('customer_prices.')->group(function () {
+        Route::middleware('permission:customer_price.view')->group(function () {
+            Route::get('/', [CustomerPriceController::class, 'index'])->name('index');
+        });
+        Route::middleware('permission:customer_price.create')->group(function () {
+            Route::get('/create', [CustomerPriceController::class, 'create'])->name('create');
+            Route::post('/',      [CustomerPriceController::class, 'store'])->name('store');
+        });
+        Route::middleware('permission:customer_price.update')->group(function () {
+            Route::get('/{customerPrice}/edit', [CustomerPriceController::class, 'edit'])->whereNumber('customerPrice')->name('edit');
+            Route::put('/{customerPrice}',      [CustomerPriceController::class, 'update'])->whereNumber('customerPrice')->name('update');
+        });
+        Route::middleware('permission:customer_price.delete')->group(function () {
+            Route::delete('/{customerPrice}', [CustomerPriceController::class, 'destroy'])->whereNumber('customerPrice')->name('destroy');
+        });
+    });
+
     // ========== SALES — Sales Order ==========
     Route::prefix('sales-orders')->name('sales_orders.')->group(function () {
         Route::middleware('permission:sales_order.view')->group(function () {
-            Route::get('/available-stock', [SalesOrderController::class, 'availableStock'])->name('available-stock');
+            Route::get('/available-stock',  [SalesOrderController::class, 'availableStock'])->name('available-stock');
+            Route::get('/resolved-price',   [SalesOrderController::class, 'resolvedPrice'])->name('resolved-price');
         });
         Route::middleware('permission:sales_order.create')->group(function () {
             Route::get('/create', [SalesOrderController::class, 'create'])->name('create');
@@ -262,6 +288,9 @@ Route::middleware('auth')->group(function () {
         });
         Route::middleware('permission:sales_order.mark_paid')->group(function () {
             Route::post('/{salesOrder}/mark-paid', [SalesOrderController::class, 'markPaid'])->whereNumber('salesOrder')->name('mark-paid');
+        });
+        Route::middleware('permission:sales_order.fulfill')->group(function () {
+            Route::post('/{salesOrder}/fulfill', [SalesOrderController::class, 'fulfill'])->whereNumber('salesOrder')->name('fulfill');
         });
         Route::middleware('permission:sales_order.update')->group(function () {
             Route::post('/{salesOrder}/items', [SalesOrderController::class, 'appendItem'])->whereNumber('salesOrder')->name('items.append');
