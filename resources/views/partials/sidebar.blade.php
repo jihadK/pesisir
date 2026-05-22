@@ -274,7 +274,8 @@
                             </a>
                         </div>
                         @endif
-                        @if(auth()->user()?->hasPermission('receivable.view'))
+                        {{-- Menu Piutang di-hide. Alur tempo tidak dipakai (deal di luar sistem). Hapus @if(false) untuk restore. --}}
+                        @if(false && auth()->user()?->hasPermission('receivable.view'))
                         <div class="menu-item">
                             <a class="menu-link {{ request()->routeIs('receivables.*') ? 'active' : '' }}" href="{{ route('receivables.index') }}">
                                 <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>

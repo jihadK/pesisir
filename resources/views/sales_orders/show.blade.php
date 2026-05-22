@@ -180,7 +180,9 @@
                     </a>
                 @endif
 
-                @if($so->isFulfillable() && ($so->payment_terms_days ?? 0) > 0 && auth()->user()?->hasPermission('sales_order.fulfill'))
+                {{-- Tombol Fulfill (alur tempo) di-hide. Real-world dealnya di luar sistem,
+                     di dalam sistem alurnya Draft → Paid sama dengan retail. Hapus @if(false) untuk restore. --}}
+                @if(false && $so->isFulfillable() && ($so->payment_terms_days ?? 0) > 0 && auth()->user()?->hasPermission('sales_order.fulfill'))
                     <form method="POST" action="{{ route('sales_orders.fulfill', $so) }}" onsubmit="return confirm('Tandai Order ini sebagai Fulfilled? Barang akan dikirim (stock dideduct) dan customer berhutang sampai jatuh tempo.')">
                         @csrf
                         <button type="submit" class="btn btn-warning w-100">

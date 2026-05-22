@@ -155,6 +155,8 @@
     </div>
 </div>
 
+{{-- Widget Piutang di-hide karena alur tempo tidak dipakai. Hapus @if(false) untuk restore. --}}
+@if(false)
 {{-- ===== Piutang widgets ===== --}}
 <div class="row g-4 mb-5">
     <div class="col-12">
@@ -209,6 +211,8 @@
         </a>
     </div>
 </div>
+
+@endif
 
 {{-- ===== Bottom row: Stock low + Unpaid orders ===== --}}
 <div class="row g-4">
