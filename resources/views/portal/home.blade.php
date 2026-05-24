@@ -83,7 +83,7 @@ body { font-family: 'Manrope', sans-serif; }
     <div class="flex flex-col md:flex-row items-stretch md:items-center gap-3">
       <div class="relative flex-1">
         <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-primary pointer-events-none">search</span>
-        <input id="search-input" type="search" placeholder="Cari produk, kategori, atau SKU..." autocomplete="off"
+        <input id="search-input" type="search" placeholder="Cari produk atau kategori..." autocomplete="off"
           class="w-full pl-12 pr-12 py-3.5 bg-surface-container-low border-2 border-transparent rounded-2xl text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:border-primary focus:bg-white transition-all" />
         <button id="search-clear" onclick="clearSearch()" class="hidden absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 hover:bg-surface-container rounded-full flex items-center justify-center">
           <span class="material-symbols-outlined text-on-surface-variant text-base">close</span>
@@ -161,11 +161,12 @@ body { font-family: 'Manrope', sans-serif; }
 </div>
 
 {{-- ===== NUTRITION MODAL ===== --}}
-<div id="nut-overlay" class="hidden fixed inset-0 bg-black/50 z-50" onclick="closeNutritionModal()"></div>
-<div id="nut-modal" class="hidden fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[92vw] max-w-md bg-surface rounded-3xl shadow-2xl overflow-hidden">
-  <div class="bg-gradient-to-br from-primary to-primary-container text-white p-5 relative">
-    <button onclick="closeNutritionModal()" class="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center">
-      <span class="material-symbols-outlined text-white">close</span>
+<div id="nut-overlay" class="hidden fixed inset-0 bg-black/50 z-[60]" onclick="closeNutritionModal()"></div>
+<div id="nut-modal" class="hidden fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[70] w-[92vw] max-w-md bg-surface rounded-3xl shadow-2xl overflow-hidden">
+  <div class="bg-gradient-to-br from-primary to-primary-container text-white p-5 pr-16 relative">
+    <button type="button" onclick="closeNutritionModal()"
+      class="absolute top-3 right-3 z-10 w-11 h-11 rounded-full bg-white/25 hover:bg-white/40 active:scale-90 flex items-center justify-center transition-all cursor-pointer">
+      <span class="material-symbols-outlined text-white pointer-events-none" style="font-size:24px;">close</span>
     </button>
     <div class="flex items-center gap-2 text-xs font-bold uppercase opacity-80 mb-1">
       <span class="material-symbols-outlined" style="font-size:16px;">spa</span>
@@ -173,7 +174,12 @@ body { font-family: 'Manrope', sans-serif; }
     </div>
     <h3 id="nut-modal-title" class="text-xl font-bold leading-tight"></h3>
   </div>
-  <div id="nut-modal-body" class="p-5 space-y-3 max-h-[60vh] overflow-y-auto"></div>
+  <div id="nut-modal-body" class="p-5 space-y-3 max-h-[55vh] overflow-y-auto"></div>
+  <div class="p-4 border-t border-outline-variant/50 bg-surface-container-low">
+    <button type="button" onclick="closeNutritionModal()" class="w-full py-3 bg-primary text-white rounded-2xl font-bold hover:bg-primary-container active:scale-[0.98] transition-all">
+      Tutup
+    </button>
+  </div>
 </div>
 
 {{-- ===== TOAST ===== --}}
@@ -415,10 +421,9 @@ function renderProducts(list) {
     return `
       <div class="group fade-in bg-white rounded-3xl overflow-hidden border-2 ${inCartQty > 0 ? 'border-primary shadow-lg shadow-primary/20' : 'border-outline-variant/50'} hover:shadow-xl hover:border-primary/30 hover:-translate-y-1 transition-all duration-300 flex flex-col relative">
 
-        {{-- Top badges (kategori + status badge admin + cart counter) --}}
+        {{-- Top badges (badge admin di kiri + cart counter di kanan) --}}
         <div class="absolute top-3 left-3 right-3 z-10 flex items-start justify-between gap-2 pointer-events-none">
           <div class="flex flex-col items-start gap-1">
-            <span class="px-2.5 py-1 bg-white/95 backdrop-blur-sm text-on-surface-variant text-[10px] font-bold uppercase tracking-wide rounded-full shadow-sm">${p.parent_cat}</span>
             ${p.badge ? (() => {
               const s = BADGE_STYLES[p.badge.color] || BADGE_STYLES.primary;
               return `<span class="px-2.5 py-1 ${s.bg} ${s.text} text-[10px] font-bold uppercase tracking-wide rounded-full shadow-md">${p.badge.label}</span>`;

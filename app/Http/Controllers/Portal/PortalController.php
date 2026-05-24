@@ -54,6 +54,12 @@ class PortalController extends Controller
                     ? (str_starts_with($p->image_url, 'http') ? $p->image_url : asset($p->image_url))
                     : asset('assets/media/product/default-produk.jpg');
                 $badgeOpts = Product::badgeOptions();
+                // Pack content "banyak": kalau min ATAU max == 999, hide label sepenuhnya
+                // (artinya jumlah banyak / sulit dihitung). Card hanya tampilkan berat.
+                $packContent = $p->pack_content_label;
+                if ($p->pack_content_min == 999 || $p->pack_content_max == 999) {
+                    $packContent = null;
+                }
                 return [
                     'id'             => $p->id,
                     'sku'            => $p->sku,
@@ -64,7 +70,7 @@ class PortalController extends Controller
                     'price'          => (float) $p->default_sell_price,
                     'stock'          => $stock,
                     'image_url'      => $imgUrl,
-                    'pack_content'   => $p->pack_content_label,
+                    'pack_content'   => $packContent,
                     'pack_weight'    => $p->pack_weight_label,
                     'badge'          => $p->badge ? [
                         'code'  => $p->badge,
