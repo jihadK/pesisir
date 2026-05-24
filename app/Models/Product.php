@@ -24,7 +24,21 @@ class Product extends BaseModel
         'pack_content_type', 'pack_content_min', 'pack_content_max',
         'pack_weight_min_g', 'pack_weight_max_g',
         'image_url', 'is_active', 'created_by',
+        'nutrition_info', 'badge',
     ];
+
+    public const BADGE_BEST_SELLER = 'best_seller';
+    public const BADGE_RECOMMENDED = 'recommended';
+    public const BADGE_NEW         = 'new';
+
+    public static function badgeOptions(): array
+    {
+        return [
+            self::BADGE_BEST_SELLER => ['label' => 'Best Seller', 'color' => 'tertiary'],
+            self::BADGE_RECOMMENDED => ['label' => 'Recommended', 'color' => 'secondary'],
+            self::BADGE_NEW         => ['label' => 'New',         'color' => 'primary'],
+        ];
+    }
 
     protected $casts = [
         'is_perishable'      => 'boolean',
@@ -41,6 +55,7 @@ class Product extends BaseModel
         'pack_content_max'   => 'integer',
         'pack_weight_min_g'  => 'decimal:2',
         'pack_weight_max_g'  => 'decimal:2',
+        'nutrition_info'     => 'array',
     ];
 
     /* ========== Relations ========== */

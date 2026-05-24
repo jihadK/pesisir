@@ -49,6 +49,12 @@ class UpdateProductRequest extends FormRequest
             'image'            => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'remove_image'     => ['nullable', 'boolean'],
             'is_active'        => ['nullable', 'boolean'],
+
+            'badge'                  => ['nullable', Rule::in(array_keys(\App\Models\Product::badgeOptions()))],
+            'nutrition_info'          => ['nullable', 'array', 'max:10'],
+            'nutrition_info.*.label'  => ['required_with:nutrition_info.*', 'string', 'max:50'],
+            'nutrition_info.*.icon'   => ['nullable', 'string', 'max:40'],
+            'nutrition_info.*.detail' => ['nullable', 'string', 'max:500'],
         ];
     }
 

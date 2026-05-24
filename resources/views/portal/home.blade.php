@@ -4,6 +4,9 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>{{ config('app.name', 'Pesisir Fresh Fish') }} — Booking Order</title>
+<link rel="icon" type="image/png" href="{{ asset('assets/media/logos/logo-pesisir-web.png') }}" />
+<link rel="shortcut icon" href="{{ asset('assets/media/logos/logo-pesisir-web.png') }}" />
+<link rel="apple-touch-icon" href="{{ asset('assets/media/logos/logo-pesisir-web.png') }}" />
 <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
@@ -157,6 +160,22 @@ body { font-family: 'Manrope', sans-serif; }
   </div>
 </div>
 
+{{-- ===== NUTRITION MODAL ===== --}}
+<div id="nut-overlay" class="hidden fixed inset-0 bg-black/50 z-50" onclick="closeNutritionModal()"></div>
+<div id="nut-modal" class="hidden fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[92vw] max-w-md bg-surface rounded-3xl shadow-2xl overflow-hidden">
+  <div class="bg-gradient-to-br from-primary to-primary-container text-white p-5 relative">
+    <button onclick="closeNutritionModal()" class="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center">
+      <span class="material-symbols-outlined text-white">close</span>
+    </button>
+    <div class="flex items-center gap-2 text-xs font-bold uppercase opacity-80 mb-1">
+      <span class="material-symbols-outlined" style="font-size:16px;">spa</span>
+      Kandungan Nutrisi
+    </div>
+    <h3 id="nut-modal-title" class="text-xl font-bold leading-tight"></h3>
+  </div>
+  <div id="nut-modal-body" class="p-5 space-y-3 max-h-[60vh] overflow-y-auto"></div>
+</div>
+
 {{-- ===== TOAST ===== --}}
 <div id="toast" class="hidden fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-4 py-3 bg-on-surface text-surface rounded-full shadow-2xl text-sm font-semibold"></div>
 
@@ -260,6 +279,31 @@ function updateCartUI() {
   }
 }
 
+// ===== NUTRITION MODAL =====
+function openNutritionModal(p) {
+  document.getElementById('nut-modal-title').textContent = p.name;
+  const body = document.getElementById('nut-modal-body');
+  body.innerHTML = (p.nutrition_info || []).map(n => `
+    <div class="flex items-start gap-3 p-3 bg-surface-container-low rounded-2xl">
+      <div class="flex-shrink-0 w-10 h-10 rounded-xl bg-secondary-container text-on-secondary-container flex items-center justify-center">
+        <span class="material-symbols-outlined">${n.icon || 'spa'}</span>
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="font-bold text-on-surface">${n.label}</div>
+        ${n.detail ? `<div class="text-sm text-on-surface-variant mt-1 leading-relaxed">${n.detail}</div>` : ''}
+      </div>
+    </div>
+  `).join('');
+  document.getElementById('nut-overlay').classList.remove('hidden');
+  document.getElementById('nut-modal').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+function closeNutritionModal() {
+  document.getElementById('nut-overlay').classList.add('hidden');
+  document.getElementById('nut-modal').classList.add('hidden');
+  document.body.style.overflow = '';
+}
+
 // ===== CART SHEET =====
 function openCart() {
   document.getElementById('cart-overlay').classList.remove('hidden');
@@ -299,6 +343,12 @@ function getFishIcon(category) {
   if (c.includes('kepiting') || c.includes('crab')) return 'pets';
   return 'set_meal';
 }
+// Badge color map — pakai class hardcoded supaya Tailwind JIT pick up
+const BADGE_STYLES = {
+  tertiary:  { bg: 'bg-tertiary',  text: 'text-on-tertiary' },
+  secondary: { bg: 'bg-secondary', text: 'text-on-secondary' },
+  primary:   { bg: 'bg-primary',   text: 'text-on-primary' },
+};
 function getStockBadge(stock, uom) {
   // Tier indikator stok: low (<5), mid (5-20), good (>20)
   if (stock < 5)  return { cls: 'bg-tertiary/10 text-tertiary border-tertiary/30',     icon: 'priority_high',  label: `Sisa ${fmtQty(stock)} ${uom}` };
@@ -365,9 +415,15 @@ function renderProducts(list) {
     return `
       <div class="group fade-in bg-white rounded-3xl overflow-hidden border-2 ${inCartQty > 0 ? 'border-primary shadow-lg shadow-primary/20' : 'border-outline-variant/50'} hover:shadow-xl hover:border-primary/30 hover:-translate-y-1 transition-all duration-300 flex flex-col relative">
 
-        {{-- Top badges --}}
-        <div class="absolute top-3 left-3 right-3 z-10 flex items-start justify-between pointer-events-none">
-          <span class="px-2.5 py-1 bg-white/95 backdrop-blur-sm text-on-surface-variant text-[10px] font-bold uppercase tracking-wide rounded-full shadow-sm">${p.parent_cat}</span>
+        {{-- Top badges (kategori + status badge admin + cart counter) --}}
+        <div class="absolute top-3 left-3 right-3 z-10 flex items-start justify-between gap-2 pointer-events-none">
+          <div class="flex flex-col items-start gap-1">
+            <span class="px-2.5 py-1 bg-white/95 backdrop-blur-sm text-on-surface-variant text-[10px] font-bold uppercase tracking-wide rounded-full shadow-sm">${p.parent_cat}</span>
+            ${p.badge ? (() => {
+              const s = BADGE_STYLES[p.badge.color] || BADGE_STYLES.primary;
+              return `<span class="px-2.5 py-1 ${s.bg} ${s.text} text-[10px] font-bold uppercase tracking-wide rounded-full shadow-md">${p.badge.label}</span>`;
+            })() : ''}
+          </div>
           ${inCartQty > 0 ? `<span class="px-2.5 py-1 bg-primary text-white text-[10px] font-bold rounded-full shadow-md flex items-center gap-1"><span class="material-symbols-outlined text-xs">check_circle</span>${inCartQty}</span>` : ''}
         </div>
 
@@ -379,13 +435,29 @@ function renderProducts(list) {
         {{-- Body --}}
         <div class="p-4 md:p-5 flex flex-col flex-1">
           <h3 class="font-bold text-base md:text-lg leading-tight mb-1 line-clamp-2 group-hover:text-primary transition-colors">${p.name}</h3>
-          ${packStr ? `<div class="text-xs text-on-surface-variant mb-3 flex items-center gap-1"><span class="material-symbols-outlined text-sm">scale</span>${packStr}</div>` : '<div class="mb-3"></div>'}
+          ${packStr ? `<div class="text-xs text-on-surface-variant mb-2 flex items-center gap-1"><span class="material-symbols-outlined text-sm">scale</span>${packStr}</div>` : '<div class="mb-2"></div>'}
 
-          {{-- Stock badge dengan warna sesuai level --}}
-          <div class="inline-flex w-fit items-center gap-1 text-[11px] font-semibold mb-4 px-2.5 py-1 rounded-full border ${stockBadge.cls}">
-            <span class="material-symbols-outlined" style="font-size:14px;">${stockBadge.icon}</span>
-            ${stockBadge.label}
-          </div>
+          {{-- Nutrition tags (kalau ada).
+               Max 2 badge di card + tombol "Lihat Detail Nutrisi" full-width
+               kalau ada >2 nutrisi atau ada detail manfaat. --}}
+          ${(p.nutrition_info && p.nutrition_info.length) ? `
+            <div class="flex flex-wrap items-center gap-1 mb-2">
+              ${p.nutrition_info.slice(0, 2).map(n => `
+                <span class="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 bg-secondary-container text-on-secondary-container rounded-full">
+                  ${n.icon ? `<span class="material-symbols-outlined" style="font-size:12px;">${n.icon}</span>` : ''}
+                  ${n.label}
+                </span>
+              `).join('')}
+              ${p.nutrition_info.length > 2 ? `<span class="text-[10px] font-semibold text-on-surface-variant">+${p.nutrition_info.length - 2}</span>` : ''}
+            </div>
+            ${(p.nutrition_info.length > 0) ? `
+              <button type="button" onclick='openNutritionModal(${JSON.stringify(p)})'
+                class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-primary hover:text-primary-container hover:underline mb-3 transition-colors">
+                <span class="material-symbols-outlined" style="font-size:14px;">info</span>
+                Lihat Detail Nutrisi
+              </button>
+            ` : '<div class="mb-3"></div>'}
+          ` : '<div class="mb-3"></div>'}
 
           {{-- Price + action.
                Mobile: stack vertikal (harga full-width di atas, stepper/button di bawah-kanan).

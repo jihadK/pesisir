@@ -41,6 +41,7 @@ class PortalController extends Controller
                 'default_sell_price', 'image_url',
                 'pack_content_type', 'pack_content_min', 'pack_content_max',
                 'pack_weight_min_g', 'pack_weight_max_g',
+                'badge', 'nutrition_info',
             ])
             ->map(function ($p) use ($stockMap) {
                 $stock = (float) ($stockMap[$p->id] ?? 0);
@@ -52,18 +53,25 @@ class PortalController extends Controller
                 $imgUrl = $p->image_url
                     ? (str_starts_with($p->image_url, 'http') ? $p->image_url : asset($p->image_url))
                     : asset('assets/media/product/default-produk.jpg');
+                $badgeOpts = Product::badgeOptions();
                 return [
-                    'id'           => $p->id,
-                    'sku'          => $p->sku,
-                    'name'         => $p->name,
-                    'category'     => $p->category?->name ?? '—',
-                    'parent_cat'   => $parentCat,
-                    'uom'          => $p->baseUom?->code ?? 'PACK',
-                    'price'        => (float) $p->default_sell_price,
-                    'stock'        => $stock,
-                    'image_url'    => $imgUrl,
-                    'pack_content' => $p->pack_content_label,
-                    'pack_weight'  => $p->pack_weight_label,
+                    'id'             => $p->id,
+                    'sku'            => $p->sku,
+                    'name'           => $p->name,
+                    'category'       => $p->category?->name ?? '—',
+                    'parent_cat'     => $parentCat,
+                    'uom'            => $p->baseUom?->code ?? 'PACK',
+                    'price'          => (float) $p->default_sell_price,
+                    'stock'          => $stock,
+                    'image_url'      => $imgUrl,
+                    'pack_content'   => $p->pack_content_label,
+                    'pack_weight'    => $p->pack_weight_label,
+                    'badge'          => $p->badge ? [
+                        'code'  => $p->badge,
+                        'label' => $badgeOpts[$p->badge]['label'] ?? $p->badge,
+                        'color' => $badgeOpts[$p->badge]['color'] ?? 'primary',
+                    ] : null,
+                    'nutrition_info' => is_array($p->nutrition_info) ? $p->nutrition_info : [],
                 ];
             })
             ->filter(fn ($p) => $p['stock'] > 0) // hanya tampilkan yang ada stok

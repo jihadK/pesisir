@@ -92,6 +92,43 @@
                         @error('description')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                 </div>
+
+                {{-- Badge untuk customer portal --}}
+                <div class="row mb-5">
+                    <label class="col-form-label col-md-3 fw-semibold">Badge (Portal Customer)</label>
+                    <div class="col-md-9">
+                        <select name="badge" class="form-select form-select-solid" data-control="select2" data-placeholder="(Tanpa badge)" data-allow-clear="true">
+                            <option value=""></option>
+                            @foreach(\App\Models\Product::badgeOptions() as $code => $opt)
+                                <option value="{{ $code }}" @selected(old('badge', $product->badge) === $code)>{{ $opt['label'] }}</option>
+                            @endforeach
+                        </select>
+                        <div class="form-text fs-8">Label highlight di card produk portal (mis. Best Seller).</div>
+                    </div>
+                </div>
+
+                {{-- Nutrition tags --}}
+                @php $nutItems = old('nutrition_info', $product->nutrition_info ?? []); @endphp
+                <div class="row mb-5">
+                    <label class="col-form-label col-md-3 fw-semibold">Kandungan Vitamin / Nutrisi</label>
+                    <div class="col-md-9">
+                        <div id="nut_rows" class="d-flex flex-column gap-3">
+                            @forelse($nutItems as $i => $n)
+                                <div class="card border border-gray-300 p-3 nut-row">
+                                    <div class="d-flex gap-2 align-items-start mb-2">
+                                        <input type="text" name="nutrition_info[{{ $i }}][label]" value="{{ $n['label'] ?? '' }}" placeholder="Label (mis. Tinggi Protein)" maxlength="50" class="form-control form-control-solid form-control-sm" />
+                                        <input type="text" name="nutrition_info[{{ $i }}][icon]" value="{{ $n['icon'] ?? '' }}" placeholder="Icon (opsional, mis. fitness_center)" maxlength="40" class="form-control form-control-solid form-control-sm" style="max-width:240px" />
+                                        <button type="button" class="btn btn-sm btn-light-danger btn-del-nut"><i class="ki-outline ki-trash fs-3"></i></button>
+                                    </div>
+                                    <textarea name="nutrition_info[{{ $i }}][detail]" placeholder="Detail / manfaat (opsional, tampil di popup card portal)" rows="2" maxlength="500" class="form-control form-control-solid form-control-sm">{{ $n['detail'] ?? '' }}</textarea>
+                                </div>
+                            @empty
+                            @endforelse
+                        </div>
+                        <button type="button" id="btn_add_nut" class="btn btn-sm btn-light-primary mt-2"><i class="ki-outline ki-plus fs-3"></i> Tambah Nutrisi</button>
+                        <div class="form-text fs-8">Tampil sebagai badge kecil di card portal customer (max 2). Sisanya/detail muncul di popup. <a href="https://fonts.google.com/icons" target="_blank">Lihat daftar icon Material Symbols</a> (mis. <code>fitness_center</code>, <code>local_pharmacy</code>, <code>egg</code>, <code>spa</code>).</div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -638,6 +675,38 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('prod_barcode').value = digits + checksum;
         });
     }
+
+    // ===== Nutrition repeater =====
+    const nutRows = document.getElementById('nut_rows');
+    const btnAddNut = document.getElementById('btn_add_nut');
+    function reindexNut() {
+        nutRows.querySelectorAll('.nut-row').forEach((row, idx) => {
+            row.querySelectorAll('input').forEach(inp => {
+                inp.name = inp.name.replace(/nutrition_info\[\d*\]/, `nutrition_info[${idx}]`);
+            });
+        });
+    }
+    function addNutRow() {
+        const idx = nutRows.querySelectorAll('.nut-row').length;
+        const div = document.createElement('div');
+        div.className = 'card border border-gray-300 p-3 nut-row';
+        div.innerHTML = `
+            <div class="d-flex gap-2 align-items-start mb-2">
+                <input type="text" name="nutrition_info[${idx}][label]" placeholder="Label (mis. Tinggi Protein)" maxlength="50" class="form-control form-control-solid form-control-sm" />
+                <input type="text" name="nutrition_info[${idx}][icon]" placeholder="Icon (opsional, mis. fitness_center)" maxlength="40" class="form-control form-control-solid form-control-sm" style="max-width:240px" />
+                <button type="button" class="btn btn-sm btn-light-danger btn-del-nut"><i class="ki-outline ki-trash fs-3"></i></button>
+            </div>
+            <textarea name="nutrition_info[${idx}][detail]" placeholder="Detail / manfaat (opsional, tampil di popup card portal)" rows="2" maxlength="500" class="form-control form-control-solid form-control-sm"></textarea>
+        `;
+        nutRows.appendChild(div);
+    }
+    btnAddNut?.addEventListener('click', addNutRow);
+    nutRows?.addEventListener('click', (e) => {
+        const btn = e.target.closest('.btn-del-nut');
+        if (! btn) return;
+        btn.closest('.nut-row').remove();
+        reindexNut();
+    });
 });
 </script>
 @endpush
