@@ -16,6 +16,12 @@ return [
     'name' => env('APP_NAME', 'Laravel'),
 
     /*
+    | Nomor WhatsApp admin untuk customer portal (format internasional, tanpa +).
+    | Contoh: 6281234567890
+    */
+    'portal_admin_wa' => env('PORTAL_ADMIN_WA', ''),
+
+    /*
     |--------------------------------------------------------------------------
     | Application Environment
     |--------------------------------------------------------------------------

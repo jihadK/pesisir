@@ -1,6 +1,6 @@
 # 📋 Handoff Documentation — Pesisir Fresh Fish
 
-> **Tujuan dokumen ini:** Snapshot lengkap state proyek per **22 Mei 2026** sehingga developer (atau Claude di sesi berikutnya) bisa langsung melanjutkan tanpa kehilangan konteks.
+> **Tujuan dokumen ini:** Snapshot lengkap state proyek per **24 Mei 2026** sehingga developer (atau Claude di sesi berikutnya) bisa langsung melanjutkan tanpa kehilangan konteks.
 
 ---
 
@@ -8,9 +8,19 @@
 
 **Pesisir Fresh Fish** — bisnis distribusi ikan segar di Lamongan. Aplikasi inventory + sales/purchase + invoicing. Saat ini hanya 1 warehouse aktif (**WH-LAMONGAN**), semua data sudah dikonsolidasi ke sana (patch 34).
 
-### Customer Tipe
-- **Retail** — bayar langsung, `payment_terms_days = 0`, alur Draft → Paid
-- **Restoran/tempo** — bayar belakangan, `payment_terms_days > 0` (mis. 14 hari), alur Draft → Fulfilled → Paid
+### Customer Tipe & Alur Order
+**SEMUA customer (retail & restoran) pakai alur yang sama** — deal tempo di-handle di luar sistem:
+
+```
+Booking Order (Draft) → Kirim Proforma → Customer bayar (di luar sistem)
+                                            ↓
+                  Klik "Paid" → stok auto-deduct FEFO → Cetak Invoice
+```
+
+- **Retail**: bayar langsung, tidak ada tempo
+- **Restoran**: deal tempo di luar sistem, tetap pakai alur Draft → Paid
+
+> **Catatan historical:** Phase 7 sebelumnya mengimplementasi state `Fulfilled` + menu Piutang untuk tempo. UI-nya sekarang di-HIDE (backend masih ada untuk fleksibilitas). Lihat section 3 untuk detail.
 
 ---
 
@@ -44,9 +54,9 @@ Class PHP yang baru di-edit kadang tidak ke-load karena opcache. Solusi:
 | **Purchase Order (Phase 6)** | PO untuk raw material (per kategori, gram-based), status: Draft → Paid → Cancelled. Tombol "Tandai Terbayar". Includes diskon per item |
 | **Jasa Bersih Ikan** | Menu terpisah di Pembelian |
 | **Belanja Lain-lain** (`supplies_purchases`) | Plastik, box, dll. — menu terpisah |
-| **Sales / Booking Order** | Status: Draft → Paid (retail) atau Draft → Fulfilled → Paid (tempo). Includes biaya packing + biaya lain-lain + diskon. Append item ke SO Confirmed. WhatsApp share dengan signed URL public (link customer view tanpa login) |
-| **Kontrak Harga Customer** | NEW (Phase 7) — harga per customer × produk, override default. Pricing 2-layer (kontrak → default). AJAX auto-fill harga di form SO |
-| **Piutang (Receivables)** | NEW — list SO Fulfilled + aging buckets (overdue / 7d / 14d / 30d). Filter aging |
+| **Sales / Booking Order** | **Unified flow Draft → Paid** untuk semua customer. Includes biaya packing + biaya lain-lain + diskon. Append item ke SO Confirmed. WhatsApp share dengan signed URL public (link customer view tanpa login) |
+| **Kontrak Harga Customer** | Harga per customer × produk, override default. Pricing 2-layer (kontrak → default). AJAX auto-fill harga di form SO. Dropdown customer exclude tier "Retail". Dropdown produk include pack info (range berat & isi) |
+| **Piutang (Receivables)** | Backend ada tapi UI di-hide (sidebar + dashboard widget + tombol Fulfill). Deal tempo di luar sistem |
 | **Stock Card** | Histori movement per produk |
 | **Stock Adjustment (Quick)** | Modal di halaman Produk, FEFO lintas batches |
 | **Dashboard** | Period selector (harian/mingguan/bulanan), 3 summary cards period + lifetime, chart trend (ApexCharts area), stock low link, unpaid orders, 3 AR widgets (Total / Due 7d / Overdue) |
@@ -55,11 +65,14 @@ Class PHP yang baru di-edit kadang tidak ke-load karena opcache. Solusi:
 
 ### 🔒 Hidden / Disabled (sesuai UAT)
 
-| Modul | Status di Sidebar |
-|---|---|
-| Delivery Order | `@if(false)` — disabled, alur sekarang skip DO (Draft → Paid langsung) |
-| Invoicing (Invoice + Payment) | `@if(false)` — disabled, Daftar Invoice pakai filter `?status=paid` di Booking Order |
-| Stock menu (Stock Opening + Adjustment) | `@if(false)` — disabled. Kartu Stok dipindah ke menu Produk & Stok |
+| Modul | Lokasi | Status |
+|---|---|---|
+| Delivery Order | `partials/sidebar.blade.php` | `@if(false)` — alur sekarang skip DO (Draft → Paid langsung) |
+| Invoicing (Invoice + Payment) | `partials/sidebar.blade.php` | `@if(false)` — Daftar Invoice pakai filter `?status=paid` di Booking Order |
+| Stock menu (Stock Opening + Adjustment) | `partials/sidebar.blade.php` | `@if(false)` — Kartu Stok dipindah ke menu Produk & Stok |
+| **Menu Piutang** | `partials/sidebar.blade.php` | `@if(false)` — deal tempo di luar sistem |
+| **Tombol "Fulfill (Kirim, Tempo)"** | `sales_orders/show.blade.php` | `@if(false)` — tombol kuning di halaman detail SO |
+| **3 Widget AR di Dashboard** (Total/Due 7d/Overdue) | `dashboard.blade.php` | `@if(false)` block |
 
 **Cara restore:** hapus `@if(false)` … `@endif` di `resources/views/partials/sidebar.blade.php`.
 
@@ -84,10 +97,16 @@ Class PHP yang baru di-edit kadang tidak ke-load karena opcache. Solusi:
 ## 4. Arsitektur Data Penting
 
 ### Skema SO Status Flow
+
+**Aktif di UI:**
 ```
-Draft ──┬─→ Fulfilled (tempo) ──→ Paid
-        ├─→ Paid (langsung)
+Draft ──┬─→ Paid
         └─→ Cancelled
+```
+
+**Tersedia di DB tapi UI hidden** (untuk future use):
+```
+Draft ──→ Fulfilled ──→ Paid    (alur tempo dengan piutang tracking)
 ```
 
 ### Pricing Resolution (2-layer)
@@ -132,40 +151,36 @@ Jalankan urut kalau setup environment baru:
 | **34** | `34_PATCH_CONSOLIDATE_TO_WH_LAMONGAN.sql` | Konsolidasi semua data ke WH-LAMONGAN, nonaktifkan warehouse lain |
 | **35** | `35_PATCH_RELEASE_ORPHAN_RESERVATIONS.sql` | Reset `reserved_quantity` orphan + re-create dari SO Confirmed/Partial |
 | **36** | `36_PATCH_CUSTOMER_CONTRACT_PRICES_AND_FULFILLED.sql` | **PHASE 7** — tabel kontrak harga customer + status SO `fulfilled` + `due_date` + permissions |
+| **37** | `37_UNDO_SO_00021_00022.sql` | **ONE-TIME** — undo SO/2026/00021 & SO/2026/00022 dari Paid → Draft + reverse stok via `in_return` movement (template pattern untuk undo serupa di masa depan) |
 
 ---
 
-## 6. Alur Test Per Tipe Customer
+## 6. Alur Test Order (Unified — Retail & Restoran)
 
-### A. Retail (Bayar Langsung)
-1. Customer dengan `payment_terms_days = 0`
-2. Buat SO Draft di [Booking Order Baru](http://testapp.test/sales-orders/create)
-3. Harga otomatis = `default_sell_price`
-4. Submit → status Draft
-5. Tombol di halaman detail: **Edit / Paid (Terbayar) / Cancel**
-6. Klik Paid → stock terdeduct FEFO, status Paid
-
-### B. Restoran (Tempo)
-**Setup:**
-1. Edit customer: set `payment_terms_days = 14` (atau sesuai kontrak)
-2. Buka [Kontrak Harga](http://testapp.test/customer-prices) → Kontrak Baru
-3. Pilih customer × produk → harga kontrak (mis. Rp 27.500 untuk Kakap)
-4. Save
+**Setup (opsional untuk Restoran):**
+1. Buka [Kontrak Harga](http://testapp.test/customer-prices) → Kontrak Baru
+2. Pilih customer × produk → set harga kontrak (mis. Rp 27.500 untuk Kakap)
+3. Save
 
 **Buat Order:**
-5. [Booking Order Baru](http://testapp.test/sales-orders/create)
-6. Pilih customer Restoran → `payment_terms_days` auto-fill = 14
-7. Pilih produk → harga **auto-fill dari kontrak**, badge hijau "Harga Kontrak"
-8. Submit → status Draft
+4. [Booking Order Baru](http://testapp.test/sales-orders/create)
+5. Pilih customer
+6. Pilih produk → harga **auto-fill dari kontrak** (badge hijau "Harga Kontrak") atau default sell price
+7. Submit → status Draft
 
-**Fulfill:**
-9. Detail SO → tombol **"Fulfill (Kirim, Tempo 14 hari)"** muncul kuning
-10. Klik → stock terdeduct, status `Fulfilled`, `due_date = order_date + 14`
-11. SO muncul di [Piutang](http://testapp.test/receivables)
+**Proforma → Bayar → Paid:**
+8. Detail SO → klik **"Cetak / Proforma"** → kirim WA ke customer (signed URL, customer akses tanpa login)
+9. Customer transfer / bayar (di luar sistem)
+10. Klik **"Paid (Terbayar)"** → stock terdeduct FEFO, status Paid
+11. Cetak Invoice (otomatis dengan stample LUNAS)
+12. SO muncul di [Daftar Invoice](http://testapp.test/sales-orders?status=paid)
 
-**Lunas:**
-12. Detail SO → tombol **"Tandai Lunas"** → status Paid
-13. SO hilang dari Piutang, muncul di [Daftar Invoice](http://testapp.test/sales-orders?status=paid)
+### Catatan untuk Undo Order Salah Paid
+
+Pakai pattern di [patch 37](appplandoc/37_UNDO_SO_00021_00022.sql):
+- Ganti nomor SO di patch
+- Patch akan validasi status `paid`, insert reverse movement (`in_return`), reset status ke `draft`
+- Wrap dalam `BEGIN/COMMIT` — atomic + idempotent
 
 ---
 
@@ -309,4 +324,17 @@ Pakai `App\Support\Flash::ok($msg, $title)` atau `Flash::err($msg, $code, $title
 
 ---
 
-_Dokumen ini ditulis 22 Mei 2026. Update saat ada perubahan major._
+_Dokumen ini ditulis 22 Mei 2026. Update terakhir 24 Mei 2026._
+
+---
+
+## 📝 Changelog Dokumen
+
+**24 Mei 2026:**
+- Phase 7 disederhanakan: alur Restoran digabung dengan Retail (Draft → Paid). Deal tempo di-handle di luar sistem.
+- Menu Piutang, tombol Fulfill, dan widget AR Dashboard di-HIDE (backend masih ada).
+- Tambah pattern undo SO (patch 37) untuk koreksi order salah Paid.
+- Kontrak Harga: filter dropdown customer exclude tier "Retail", produk show pack info (range berat & isi), hide field Min Qty.
+
+**22 Mei 2026:**
+- Initial handoff documentation.

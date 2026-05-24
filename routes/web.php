@@ -59,17 +59,25 @@ Route::get('/__opcache-reset', function () {
     return '<pre>' . implode("\n", $report) . '</pre>';
 });
 
-// Guest
-Route::middleware('guest')->group(function () {
-    Route::get('/login',  [LoginController::class, 'showLoginForm'])->name('login');
-    Route::post('/login', [LoginController::class, 'login'])->name('login.attempt');
-});
+// ===== PORTAL CUSTOMER (PUBLIC — no auth) =====
+// Root domain = portal. Akses bebas, no login.
+Route::get('/',                    [\App\Http\Controllers\Portal\PortalController::class, 'index'])->name('portal.home');
+Route::get('/portal/products.json',[\App\Http\Controllers\Portal\PortalController::class, 'productsJson'])->name('portal.products');
 
 // Public — link kuitansi untuk customer (signed URL, tanpa login)
 Route::get('/p/so/{salesOrder}/receipt', [SalesOrderController::class, 'publicPrint'])
     ->whereNumber('salesOrder')
     ->middleware('signed')
     ->name('sales_orders.public-print');
+
+// ===== ADMIN AREA (semua di prefix /admin) =====
+Route::prefix('admin')->group(function () {
+
+    // Guest
+    Route::middleware('guest')->group(function () {
+        Route::get('/login',  [LoginController::class, 'showLoginForm'])->name('login');
+        Route::post('/login', [LoginController::class, 'login'])->name('login.attempt');
+    });
 
 // Authenticated
 Route::middleware('auth')->group(function () {
@@ -516,3 +524,4 @@ Route::middleware('auth')->group(function () {
         });
     });
 });
+}); // end /admin prefix

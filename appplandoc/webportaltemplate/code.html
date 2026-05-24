@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+
+<html class="light" lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>OceanFresh | Premium Seafood Booking</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-high": "#e3e7ff",
+                    "on-tertiary": "#ffffff",
+                    "outline-variant": "#bfc7d1",
+                    "primary-fixed": "#cde5ff",
+                    "surface-container": "#ebedff",
+                    "primary-container": "#0077b6",
+                    "on-secondary-fixed-variant": "#005048",
+                    "on-primary-fixed": "#001d32",
+                    "surface-container-highest": "#dbe1ff",
+                    "on-error": "#ffffff",
+                    "inverse-primary": "#94ccff",
+                    "surface": "#faf8ff",
+                    "secondary-container": "#8cf5e4",
+                    "secondary-fixed-dim": "#6fd8c8",
+                    "error": "#ba1a1a",
+                    "surface-container-low": "#f3f3ff",
+                    "secondary": "#006a60",
+                    "on-secondary-container": "#007166",
+                    "surface-container-lowest": "#ffffff",
+                    "tertiary": "#6f5500",
+                    "secondary-fixed": "#8cf5e4",
+                    "on-tertiary-container": "#fff6e8",
+                    "on-primary-fixed-variant": "#004b74",
+                    "on-tertiary-fixed": "#251a00",
+                    "inverse-surface": "#282f49",
+                    "tertiary-fixed": "#ffdf96",
+                    "on-surface": "#131a33",
+                    "on-surface-variant": "#404850",
+                    "tertiary-fixed-dim": "#e7c268",
+                    "surface-tint": "#006399",
+                    "on-error-container": "#93000a",
+                    "primary": "#005d90",
+                    "error-container": "#ffdad6",
+                    "on-background": "#131a33",
+                    "on-secondary": "#ffffff",
+                    "on-tertiary-fixed-variant": "#5a4400",
+                    "background": "#faf8ff",
+                    "tertiary-container": "#8b6d1b",
+                    "on-secondary-fixed": "#00201c",
+                    "on-primary": "#ffffff",
+                    "outline": "#707881",
+                    "surface-bright": "#faf8ff",
+                    "primary-fixed-dim": "#94ccff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-desktop": "48px",
+                    "container-max": "1280px",
+                    "margin-mobile": "16px",
+                    "gutter": "24px",
+                    "unit": "8px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["Manrope"],
+                    "body-lg": ["Manrope"],
+                    "headline-md": ["Manrope"],
+                    "label-sm": ["Manrope"],
+                    "headline-lg-mobile": ["Manrope"],
+                    "headline-xl": ["Manrope"],
+                    "body-md": ["Manrope"],
+                    "label-md": ["Manrope"]
+            },
+            "fontSize": {
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                    "headline-xl": ["40px", {"lineHeight": "52px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.02em", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Manrope', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-background text-on-background selection:bg-primary-container selection:text-white">
+<!-- Sidebar Navigation -->
+<aside class="hidden lg:flex flex-col h-full py-8 px-4 h-screen w-64 fixed left-0 top-0 bg-surface-container-low border-r border-outline-variant z-[60]">
+<div class="mb-10 px-4">
+<h1 class="font-headline-md text-headline-md font-bold text-primary">OceanFresh</h1>
+<p class="text-on-surface-variant font-label-md text-label-md">Premium Seafood</p>
+</div>
+<nav class="flex flex-col gap-2 flex-grow">
+<a class="flex items-center gap-3 bg-primary-fixed text-on-primary-fixed rounded-xl px-4 py-3 transition-all duration-200 active:translate-x-1" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-label-md">Home</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-container-high rounded-xl transition-all duration-200" href="#">
+<span class="material-symbols-outlined">sailing</span>
+<span class="font-label-md">Products</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-container-high rounded-xl transition-all duration-200" href="#">
+<span class="material-symbols-outlined">receipt_long</span>
+<span class="font-label-md">Orders</span>
+</a>
+</nav>
+<div class="mt-auto px-4 py-6">
+<div class="flex items-center gap-3 mt-6">
+<div class="w-10 h-10 rounded-full bg-primary-container overflow-hidden">
+<img alt="Profile" class="w-full h-full object-cover" data-alt="Close-up professional portrait of a confident male chef in his 30s, wearing a clean white uniform. The background is a soft-focus high-end commercial kitchen with warm, subtle lighting that complements the premium, clean light-mode aesthetic of the seafood brand." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBARgWjJdhNCy58aCXwXEGAV5TGgfgJzfBQEEyUKa9VESqcaGW_wUHVs0iv-ktqdXdMkbaQbgeosWI3F8tDCefZAZUYaJVol2tq-4DgLr9XRhjmQvmTQUU05IZEdEJjsZLts_bO4eNfvDlRoAN3u59_3feM9Hrrx4uhCC7YxrxjSaVgPv8cdo9nyLbLOzrJ1FBlz9RLcoVan8qtPeggNyr6L39fy-QsL10iomhn5eRLtX-TauUK_HjZz9Fr1lO1oY8k4zh7QAdt9UU"/>
+</div>
+<div>
+<p class="font-label-md text-on-surface leading-tight">Sobat Pesisir</p>
+<p class="text-xs text-on-surface-variant">jakarta-south-01</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="lg:ml-64 min-h-screen flex flex-col relative">
+<!-- TopAppBar -->
+<header class="sticky top-0 w-full z-50 flex justify-between items-center px-margin-mobile md:px-margin-desktop h-20 max-w-container-max mx-auto bg-surface/80 backdrop-blur-md shadow-[0_4px_20px_rgba(0,106,96,0.05)]">
+<div class="flex items-center gap-4">
+<button class="lg:hidden p-2 text-on-surface">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<span class="font-headline-md text-headline-md font-bold text-primary lg:hidden">OceanFresh</span>
+<div class="hidden md:flex items-center gap-2 text-on-surface-variant bg-surface-container-low px-4 py-2 rounded-full border border-outline-variant">
+<span class="material-symbols-outlined text-primary text-lg">location_on</span>
+<span class="text-label-md">Jakarta Selatan</span>
+</div>
+</div>
+<div class="flex items-center gap-2 md:gap-6">
+<div class="flex items-center gap-2 md:gap-4">
+<button class="p-2 text-on-surface hover:text-primary transition-colors relative">
+<span class="material-symbols-outlined">shopping_cart</span>
+<span class="absolute top-1 right-1 w-4 h-4 bg-error text-[10px] text-white flex items-center justify-center rounded-full">3</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Hero Section -->
+<section class="px-margin-mobile md:px-margin-desktop py-12">
+<div class="relative rounded-[32px] overflow-hidden bg-primary-fixed min-h-[400px] md:min-h-[500px] flex items-center p-8 md:p-16">
+<div class="absolute inset-0 z-0">
+<img class="w-full h-full object-cover opacity-80 mix-blend-overlay" data-alt="Panoramic high-resolution photograph of a pristine morning sea with a traditional Indonesian fishing boat sailing towards the sunrise. The lighting is soft, golden, and ethereal, creating a sense of calm and ultimate freshness. The water is a crystal clear turquoise, reflecting the high-end, clean maritime brand identity of OceanFresh." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCLCwVjppp8RfKTipBu4Rnc8fRNmLFjYk8vSkougswKnGROH-5t6T-JRtihpZas_UE3dVudfCjpyLY9Z6XHr6GvaSJyF2sUANXyrqnjsakbUhqV5GPQFu8tTHlcsmNMiUr5JGRgx-POc96TIs5dp5qvEfUYMuiv7jYr2u3QGaRh0FYcYHdIGJIhdJ_UNyQsasEif1i2cHjXegvl8NXyIHtsjyN2HgUFCu4rjtm9zKiHSP3QUns_IJcvOzLRNnECwAjqraTdPIUkKCI"/>
+<div class="absolute inset-0 bg-gradient-to-r from-primary-fixed/90 via-primary-fixed/40 to-transparent"></div>
+</div>
+<div class="relative z-10 max-w-2xl">
+<span class="inline-block px-4 py-1.5 bg-secondary-container text-on-secondary-container rounded-full text-label-md font-bold mb-6">FRESH FROM THE DOCK</span>
+<h2 class="font-headline-xl text-headline-xl text-on-primary-fixed leading-tight mb-6">Ikan Laut Segar, Langsung dari Nelayan</h2>
+<p class="font-body-lg text-body-lg text-on-primary-fixed-variant mb-8 max-w-lg">Nikmati kualitas ekspor makanan laut terbaik yang ditangkap secara berkelanjutan dan dikirim langsung ke pintu Anda dalam 24 jam.</p>
+<div class="flex flex-wrap gap-4">
+<button class="px-8 py-4 bg-primary text-on-primary rounded-full font-bold shadow-lg hover:bg-primary-container transition-all active:scale-95">Explore Catalog</button>
+<button class="px-8 py-4 bg-surface-lowest text-primary border-2 border-primary rounded-full font-bold hover:bg-primary-fixed transition-all active:scale-95">Check Schedule</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Filter & Products -->
+<section class="px-margin-mobile md:px-margin-desktop py-8">
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
+<div class="flex items-center gap-3 overflow-x-auto no-scrollbar w-full md:w-auto pb-2 md:pb-0">
+<button class="px-6 py-2.5 rounded-full bg-primary text-on-primary font-bold text-label-md whitespace-nowrap">All Items</button>
+<button class="px-6 py-2.5 rounded-full bg-surface-container-high text-on-surface-variant font-bold text-label-md whitespace-nowrap hover:bg-primary-fixed transition-colors">Fish</button>
+<button class="px-6 py-2.5 rounded-full bg-surface-container-high text-on-surface-variant font-bold text-label-md whitespace-nowrap hover:bg-primary-fixed transition-colors">Crustaceans</button>
+<button class="px-6 py-2.5 rounded-full bg-surface-container-high text-on-surface-variant font-bold text-label-md whitespace-nowrap hover:bg-primary-fixed transition-colors">Shellfish</button>
+</div>
+<div class="text-on-surface-variant text-label-md flex items-center gap-2">
+<span class="material-symbols-outlined text-lg">sort</span>
+<span>Sort by: <span class="font-bold text-primary">Highest Popularity</span></span>
+</div>
+</div>
+<!-- Product Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap- gutter">
+<!-- Card 1: Ikan Salmon -->
+<div class="group bg-surface rounded-[24px] overflow-hidden border border-outline-variant hover:shadow-xl transition-all duration-300 flex flex-col h-full">
+<div class="relative h-56 overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="A professional food photography shot of a fresh raw salmon fillet placed on a minimalist white plate. The lighting is bright and clean, highlighting the vibrant orange texture of the fish and the crystalline water droplets. The setting is modern and premium, using a palette of soft whites and deep teals to align with the professional maritime design system." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC6XiZsk3zkhL_ZNO-lCFPabX-hwMDv43rBmLx53bpi2q_NU90sXVmge_HOZKBjtB_lTB7JA-MFTU5i6ux3weqjBbEAEJR-ZnZ34AYeMzTE4GUgqR4PYv2w_L1Jknvn9IVI9E4jT7hQQwKgLBocjuuPjvA00I13Jr0yC5CHdlxO-xfFTwK47WupzWaV_4nOJY9SdIZhbTw9RMdsxxu_hHrlpXUMHio3yWLuKXRl4GUismEauQqRmC1SoI3Ag1hcO16dpuyzg0nSJVQ"/>
+<div class="absolute top-4 left-4">
+<span class="bg-tertiary text-on-tertiary px-3 py-1 rounded-lg text-label-sm font-bold shadow-md">Best Seller</span>
+</div>
+<button class="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-all shadow-lg active:scale-90">
+<span class="material-symbols-outlined">favorite</span>
+</button>
+</div>
+<div class="p-6 flex flex-col flex-grow">
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-headline-md text-headline-md text-on-surface leading-tight">Ikan Salmon</h3>
+<span class="text-primary font-bold text-label-md">Fresh</span>
+</div>
+<p class="text-on-surface-variant font-body-md text-body-md mb-4">Fillet Salmon premium, kaya omega-3, diimpor segar setiap hari.</p>
+<div class="flex items-center gap-2 mb-6">
+<span class="material-symbols-outlined text-sm text-secondary">inventory_2</span>
+<span class="text-label-sm text-on-surface-variant">Stok: 12 kg tersedia</span>
+</div>
+<div class="mt-auto flex items-center justify-between pt-4 border-t border-outline-variant">
+<div>
+<p class="text-xs text-on-surface-variant font-bold uppercase tracking-wider">Per 500g</p>
+<p class="font-headline-md text-primary">Rp 175.000</p>
+</div>
+<button class="p-3 bg-primary-container text-white rounded-xl hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 transition-all">
+<span class="material-symbols-outlined">add_shopping_cart</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Card 2: Udang Tiger -->
+<div class="group bg-surface rounded-[24px] overflow-hidden border border-outline-variant hover:shadow-xl transition-all duration-300 flex flex-col h-full">
+<div class="relative h-56 overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="High-end close-up shot of large, fresh tiger prawns arranged artfully on crushed ice. The prawns have a shimmering metallic sheen, and the lighting is crisp and cool-toned, reflecting a minimalist and professional culinary style. The background is a clean, deep navy surface that emphasizes the quality and freshness of the seafood." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAd-GxE3SFoAgo7FS3KMXRzatAUHkdi61i54JzwDqwQtDGbEaNjyqXEoJC0G_3KwREeXM6wBRNJm0cQXqMpNLzLwAQuBHWoPtDI3--YFzYLm2BSSw27s0w8J3bcYTdLGXINcOQ3Ir-C7YglVyzM84HuZ3PF6EUJ3hxrvJL3lhv5TJDQrEx0QSwsZE1TnQb2fX2YoGlyx7gKWx_J_HvXwlE5ji8yKU-mr68c5k2KvPBe73ugqaO1ryFFWDErKV-cYEgDen6puiUssgI"/>
+<div class="absolute top-4 left-4">
+<span class="bg-secondary text-on-secondary px-3 py-1 rounded-lg text-label-sm font-bold shadow-md">Recommended</span>
+</div>
+<button class="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-all shadow-lg active:scale-90">
+<span class="material-symbols-outlined">favorite</span>
+</button>
+</div>
+<div class="p-6 flex flex-col flex-grow">
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-headline-md text-headline-md text-on-surface leading-tight">Udang Tiger</h3>
+<span class="text-secondary font-bold text-label-md">Export Quality</span>
+</div>
+<p class="text-on-surface-variant font-body-md text-body-md mb-4">Udang Windu laut besar, tekstur kenyal dan manis alami.</p>
+<div class="flex items-center gap-2 mb-6">
+<span class="material-symbols-outlined text-sm text-secondary">inventory_2</span>
+<span class="text-label-sm text-on-surface-variant">Stok: 25 kg tersedia</span>
+</div>
+<div class="mt-auto flex items-center justify-between pt-4 border-t border-outline-variant">
+<div>
+<p class="text-xs text-on-surface-variant font-bold uppercase tracking-wider">Per 1kg</p>
+<p class="font-headline-md text-primary">Rp 240.000</p>
+</div>
+<button class="p-3 bg-primary-container text-white rounded-xl hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 transition-all">
+<span class="material-symbols-outlined">add_shopping_cart</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Card 3: Cumi-Cumi -->
+<div class="group bg-surface rounded-[24px] overflow-hidden border border-outline-variant hover:shadow-xl transition-all duration-300 flex flex-col h-full">
+<div class="relative h-56 overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="A clean, studio-style photograph of fresh white calamari (squid) displayed on a bed of bright green seaweed. The scene is illuminated by soft, natural daylight, creating a high-key aesthetic that feels airy and fresh. The composition is minimalist, emphasizing the pristine quality and professional sourcing of the OceanFresh product range." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBMgNJNsOEIB5mJ57B8bB9E2mH6PvuGwEWiC_Sg4XelvXlcljBoTIue53s9M-kvsYojWMwuPUKzxPbP-VDEvn6G_-3Q0FoSbX4KTOgyqsB5z_Dx_IUPGz86p9ntprGhjvW3CjlfloYDpbGEpM4jHPzATwTzMbT6ReC_p6XMA5zPYQi-nC47lWCmgSg3fJeAxx9aHOXq1vK07cyZ-qn2qwY611ekBsLNMY5vlbyzbRU2-VT8Ze5L61N96QQrfNXletTiT5MT4PYwyDc"/>
+<button class="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-all shadow-lg active:scale-90">
+<span class="material-symbols-outlined">favorite</span>
+</button>
+</div>
+<div class="p-6 flex flex-col flex-grow">
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-headline-md text-headline-md text-on-surface leading-tight">Cumi-Cumi</h3>
+<span class="text-primary font-bold text-label-md">Lokal</span>
+</div>
+<p class="text-on-surface-variant font-body-md text-body-md mb-4">Cumi sero segar tangkapan nelayan Muara Baru, tanpa pengawet.</p>
+<div class="flex items-center gap-2 mb-6">
+<span class="material-symbols-outlined text-sm text-secondary">inventory_2</span>
+<span class="text-label-sm text-on-surface-variant">Stok: 8 kg tersedia</span>
+</div>
+<div class="mt-auto flex items-center justify-between pt-4 border-t border-outline-variant">
+<div>
+<p class="text-xs text-on-surface-variant font-bold uppercase tracking-wider">Per 1kg</p>
+<p class="font-headline-md text-primary">Rp 85.000</p>
+</div>
+<button class="p-3 bg-primary-container text-white rounded-xl hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 transition-all">
+<span class="material-symbols-outlined">add_shopping_cart</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Card 4: Kepiting Bakau -->
+<div class="group bg-surface rounded-[24px] overflow-hidden border border-outline-variant hover:shadow-xl transition-all duration-300 flex flex-col h-full">
+<div class="relative h-56 overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="A macro shot of a live mud crab on a dark, wet stone surface. The lighting highlights the intricate patterns on the crab's shell and the powerful claws. The mood is sophisticated and raw, representing premium sourcing and direct-from-fisherman quality. The color palette features deep earth tones and rich navies to align with high-end maritime aesthetics." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAvMyGEZLi0R_bq5iQi1-Td-OFxmKa4JWhYuY-RNaLZR8VqXRXZLC1k2x9vw86j9FdwQHWSQ7V3j83Sl9eUkAUTLJM8DzIhTPZm3YjQt3GtdSToha0zrasOa1MSV3lL_xQPdTKSfz7xzqPeBie3l3Eex82i_miy0iseSFhy9b_DT6yIBiX6TQbg34dv3rk25uhHl_C7IO5nWs9SMfS62uFT63oGgbDQ-IUBWA1f7Z4tjE969k8NiqBcBYtvP_B_RxP_NuSabX_MG-0"/>
+<button class="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-all shadow-lg active:scale-90">
+<span class="material-symbols-outlined">favorite</span>
+</button>
+</div>
+<div class="p-6 flex flex-col flex-grow">
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-headline-md text-headline-md text-on-surface leading-tight">Kepiting Bakau</h3>
+<span class="text-primary font-bold text-label-md">Live</span>
+</div>
+<p class="text-on-surface-variant font-body-md text-body-md mb-4">Kepiting bakau hidup, daging padat dan sangat manis. Ukuran L.</p>
+<div class="flex items-center gap-2 mb-6">
+<span class="material-symbols-outlined text-sm text-secondary">inventory_2</span>
+<span class="text-label-sm text-on-surface-variant">Stok: 5 kg tersedia</span>
+</div>
+<div class="mt-auto flex items-center justify-between pt-4 border-t border-outline-variant">
+<div>
+<p class="text-xs text-on-surface-variant font-bold uppercase tracking-wider">Per 1kg</p>
+<p class="font-headline-md text-primary">Rp 210.000</p>
+</div>
+<button class="p-3 bg-primary-container text-white rounded-xl hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 transition-all">
+<span class="material-symbols-outlined">add_shopping_cart</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Footer -->
+<footer class="w-full py-16 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto flex flex-col md:flex-row justify-between bg-surface-container-highest dark:bg-surface-dim mt-16 rounded-t-[48px]">
+<div class="mb-12 md:mb-0 max-w-sm">
+<h2 class="font-headline-md text-headline-md font-bold text-primary mb-4">OceanFresh</h2>
+<p class="text-on-surface-variant font-body-md text-body-md mb-6">Membawa kesegaran laut langsung ke meja makan Anda. Kami mendukung nelayan lokal dengan praktik perdagangan yang adil.</p>
+<div class="flex gap-4">
+<a class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined">public</span>
+</a>
+<a class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined">alternate_email</span>
+</a>
+<a class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined">call</span>
+</a>
+</div>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-3 gap-12">
+<div>
+<h4 class="font-label-md text-on-surface uppercase tracking-wider mb-6">Service</h4>
+<ul class="flex flex-col gap-4 text-on-surface-variant font-body-md">
+<li><a class="hover:text-primary transition-colors" href="#">Sustainability</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Track Vessel</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Quality Assurance</a></li>
+</ul>
+</div>
+<div>
+<h4 class="font-label-md text-on-surface uppercase tracking-wider mb-6">Company</h4>
+<ul class="flex flex-col gap-4 text-on-surface-variant font-body-md">
+<li><a class="hover:text-primary transition-colors" href="#">About Us</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Support</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Contact</a></li>
+</ul>
+</div>
+<div class="col-span-2 md:col-span-1">
+<h4 class="font-label-md text-on-surface uppercase tracking-wider mb-6">Newsletter</h4>
+<p class="text-on-surface-variant text-body-md mb-4">Get updates on new catches.</p>
+<div class="flex bg-surface rounded-full p-1 border border-outline-variant">
+<input class="bg-transparent border-none focus:ring-0 px-4 py-2 w-full text-body-md" placeholder="Email address" type="email"/>
+<button class="bg-primary text-white p-2 rounded-full">
+<span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+<div class="w-full mt-16 pt-8 border-t border-outline-variant flex flex-col md:flex-row justify-between items-center gap-4">
+<p class="text-on-surface-variant text-label-sm">© 2024 OceanFresh Maritime. All rights reserved.</p>
+<div class="flex gap-6 text-label-sm text-on-surface-variant">
+<a class="hover:text-primary" href="#">Privacy Policy</a>
+<a class="hover:text-primary" href="#">Terms of Service</a>
+</div>
+</div>
+</footer>
+<!-- Mobile Nav Bar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex lg:hidden justify-around items-center px-4 pb-safe h-16 bg-surface/90 backdrop-blur-lg shadow-lg rounded-t-xl border-t border-outline-variant/10">
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-5 py-1 transition-all duration-200 active:scale-90" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-label-sm text-[10px]">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-primary-fixed-dim/20 px-4 py-1 rounded-full transition-all duration-200" href="#">
+<span class="material-symbols-outlined">sailing</span>
+<span class="font-label-sm text-[10px]">Products</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-primary-fixed-dim/20 px-4 py-1 rounded-full transition-all duration-200" href="#">
+<span class="material-symbols-outlined">receipt_long</span>
+<span class="font-label-sm text-[10px]">Orders</span>
+</a>
+</nav>
+</main>
+<script>
+        // Simple interactivity for demonstration
+        document.querySelectorAll('button, a').forEach(elem => {
+            elem.addEventListener('click', (e) => {
+                if (elem.getAttribute('href') === '#') e.preventDefault();
+                // Add ripple effect or micro-interaction here if needed
+            });
+        });
+    </script>
+</body></html>
