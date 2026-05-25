@@ -66,12 +66,12 @@
                 @forelse($rows as $r)
                     <tr>
                         <td class="ps-4">
-                            <div class="fw-bold">{{ $r->customer->name }}</div>
-                            <div class="text-muted fs-8">{{ $r->customer->code }}</div>
+                            <div class="fw-bold">{{ $r->customer?->name ?? '—' }}</div>
+                            <div class="text-muted fs-8">{{ $r->customer?->code ?? 'Customer dihapus' }}</div>
                         </td>
                         <td>
-                            <div class="fw-bold">{{ $r->product->name }}</div>
-                            <div class="text-muted fs-8">{{ $r->product->sku }}</div>
+                            <div class="fw-bold">{{ $r->product?->name ?? '—' }}</div>
+                            <div class="text-muted fs-8">{{ $r->product?->sku ?? 'Produk dihapus' }}</div>
                         </td>
                         <td class="text-end fw-bold text-primary">Rp {{ number_format((float)$r->price, 0, ',', '.') }}</td>
                         <td class="text-center fs-7">{{ rtrim(rtrim(number_format((float)$r->min_quantity, 3, ',', '.'), '0'), ',') }}</td>
