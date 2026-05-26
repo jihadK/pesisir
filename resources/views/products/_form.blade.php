@@ -388,7 +388,19 @@
                            @checked(old('is_active', $product->is_active ?? true)) />
                     <label class="form-check-label fw-semibold ms-3" for="is_active_switch">Aktif</label>
                 </div>
-                <div class="text-muted fs-7">Produk non-aktif tidak akan muncul saat membuat PO/SO baru.</div>
+                <div class="text-muted fs-7 mb-4">Produk non-aktif tidak akan muncul saat membuat PO/SO baru.</div>
+
+                <div class="separator separator-dashed my-4"></div>
+
+                <div class="form-check form-switch form-check-custom form-check-solid mb-3">
+                    <input class="form-check-input" type="checkbox" name="is_retail" value="1" id="is_retail_switch"
+                           @checked(old('is_retail', $product->is_retail ?? true)) />
+                    <label class="form-check-label fw-semibold ms-3" for="is_retail_switch">Produk Retail</label>
+                </div>
+                <div class="text-muted fs-7">
+                    <strong>ON</strong> → tampil di portal customer (<code>pesisirfreshfish.web.id</code>).<br>
+                    <strong>OFF</strong> → non-retail / wholesale, hanya untuk order internal. Tidak tampil di portal.
+                </div>
             </div>
         </div>
 

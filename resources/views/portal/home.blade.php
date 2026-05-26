@@ -544,7 +544,8 @@ function showSkeletons() {
 async function loadProducts() {
   showSkeletons();
   try {
-    const res = await fetch(PRODUCTS_URL);
+    // Cache busting: tambah timestamp supaya browser/CDN tidak serve response lama
+    const res = await fetch(`${PRODUCTS_URL}?_=${Date.now()}`, { cache: 'no-store' });
     const data = await res.json();
     ALL_PRODUCTS = data.products || [];
     if (data.admin_wa) ADMIN_WA = data.admin_wa;

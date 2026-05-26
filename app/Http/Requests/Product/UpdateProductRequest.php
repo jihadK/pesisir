@@ -49,6 +49,7 @@ class UpdateProductRequest extends FormRequest
             'image'            => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'remove_image'     => ['nullable', 'boolean'],
             'is_active'        => ['nullable', 'boolean'],
+            'is_retail'        => ['nullable', 'boolean'],
 
             'badge'                  => ['nullable', Rule::in(array_keys(\App\Models\Product::badgeOptions()))],
             'nutrition_info'          => ['nullable', 'array', 'max:10'],
@@ -99,6 +100,7 @@ class UpdateProductRequest extends FormRequest
         $this->merge([
             'is_active'     => $this->boolean('is_active'),
             'is_perishable' => $this->boolean('is_perishable'),
+            'is_retail'     => $this->boolean('is_retail'),
             'remove_image'  => $this->boolean('remove_image'),
             'default_cost_price' => $this->cleanRupiah($this->input('default_cost_price')),
             'default_sell_price' => $this->cleanRupiah($this->input('default_sell_price')),

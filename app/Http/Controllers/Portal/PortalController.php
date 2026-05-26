@@ -34,6 +34,7 @@ class PortalController extends Controller
         }
 
         $products = Product::active()
+            ->where('is_retail', true)  // Hanya produk retail tampil di portal customer
             ->with(['category:id,name,parent_id', 'category.parent:id,name', 'baseUom:id,code'])
             ->orderBy('sku')
             ->get([
@@ -83,9 +84,13 @@ class PortalController extends Controller
             ->filter(fn ($p) => $p['stock'] > 0) // hanya tampilkan yang ada stok
             ->values();
 
-        return response()->json([
-            'products' => $products,
-            'admin_wa' => config('app.portal_admin_wa', ''),
-        ]);
+        return response()
+            ->json([
+                'products' => $products,
+                'admin_wa' => config('app.portal_admin_wa', ''),
+            ])
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', '0');
     }
 }

@@ -152,7 +152,13 @@
                             @if($p->trashed())
                                 <span class="badge badge-light-dark">Terhapus</span>
                             @else
-                                <span class="badge badge-light-{{ $p->is_active ? 'success' : 'danger' }}">{{ $p->is_active ? 'Aktif' : 'Non-aktif' }}</span>
+                                <div class="d-flex flex-column gap-1">
+                                    <span class="badge badge-light-{{ $p->is_active ? 'success' : 'danger' }}">{{ $p->is_active ? 'Aktif' : 'Non-aktif' }}</span>
+                                    <span class="badge {{ $p->is_retail ? 'badge-light-primary' : 'badge-light-warning' }} fs-8">
+                                        <i class="ki-outline {{ $p->is_retail ? 'ki-shop' : 'ki-truck' }} fs-7 me-1"></i>
+                                        {{ $p->is_retail ? 'Retail' : 'Non-Retail' }}
+                                    </span>
+                                </div>
                             @endif
                         </td>
                         <td class="text-end">

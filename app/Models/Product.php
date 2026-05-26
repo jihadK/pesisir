@@ -24,7 +24,7 @@ class Product extends BaseModel
         'pack_content_type', 'pack_content_min', 'pack_content_max',
         'pack_weight_min_g', 'pack_weight_max_g',
         'image_url', 'is_active', 'created_by',
-        'nutrition_info', 'badge',
+        'nutrition_info', 'badge', 'is_retail',
     ];
 
     public const BADGE_BEST_SELLER = 'best_seller';
@@ -43,6 +43,7 @@ class Product extends BaseModel
     protected $casts = [
         'is_perishable'      => 'boolean',
         'is_active'          => 'boolean',
+        'is_retail'          => 'boolean',
         'storage_temp_min'   => 'decimal:1',
         'storage_temp_max'   => 'decimal:1',
         'shelf_life_days'    => 'integer',

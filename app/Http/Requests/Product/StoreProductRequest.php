@@ -46,6 +46,7 @@ class StoreProductRequest extends FormRequest
 
             'image'            => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'is_active'        => ['nullable', 'boolean'],
+            'is_retail'        => ['nullable', 'boolean'],
 
             'initial_stock'    => ['nullable', 'integer', 'min:0'],
 
@@ -101,6 +102,7 @@ class StoreProductRequest extends FormRequest
         $this->merge([
             'sku'           => strtoupper(trim((string) $this->input('sku'))),
             'is_active'     => $this->boolean('is_active'),
+            'is_retail'     => $this->boolean('is_retail', true),
             'is_perishable' => $this->boolean('is_perishable'),
             'default_cost_price' => $this->cleanRupiah($this->input('default_cost_price')),
             'default_sell_price' => $this->cleanRupiah($this->input('default_sell_price')),
