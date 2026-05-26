@@ -22,6 +22,17 @@ return [
     'portal_admin_wa' => env('PORTAL_ADMIN_WA', ''),
 
     /*
+    | Link sosial media untuk customer portal (banner hero).
+    | Kosongkan kalau tidak ingin ditampilkan.
+    */
+    'portal_social' => [
+        'whatsapp'  => env('PORTAL_WA_URL', ''),        // contoh: https://wa.me/6281234567890
+        'tiktok'    => env('PORTAL_TIKTOK_URL', ''),    // contoh: https://www.tiktok.com/@pesisirfreshfish
+        'instagram' => env('PORTAL_INSTAGRAM_URL', ''), // contoh: https://instagram.com/pesisirfreshfish
+        'facebook'  => env('PORTAL_FACEBOOK_URL', ''), // contoh: https://facebook.com/pesisirfreshfish
+    ],
+
+    /*
     |--------------------------------------------------------------------------
     | Application Environment
     |--------------------------------------------------------------------------
