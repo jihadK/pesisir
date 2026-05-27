@@ -7,7 +7,6 @@ use App\Models\Product;
 use App\Models\ProductGrade;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class ProductService
@@ -127,7 +126,9 @@ class ProductService
     }
 
     /**
-     * Upload image ke storage/app/public/products/
+     * Upload image langsung ke public/storage/products/ supaya bisa diakses
+     * lewat URL /storage/products/... tanpa bergantung symlink storage:link
+     * (di environment ini public/storage adalah folder nyata, bukan symlink).
      * Return relative URL (mis. /storage/products/abc-123.jpg) atau null kalau gagal.
      */
     public function uploadImage(UploadedFile $file, string $sku): ?string
@@ -137,9 +138,13 @@ class ProductService
             return null;
         }
         $filename = Str::slug($sku) . '-' . Str::random(6) . '.' . $ext;
-        $path = $file->storeAs('public/products', $filename);
-        // storeAs ke public disk return path relative ke storage. Kita return URL public
-        return $path ? '/storage/products/' . $filename : null;
+        $dir = public_path('storage/products');
+        if (! is_dir($dir)) {
+            @mkdir($dir, 0775, true);
+        }
+        $file->move($dir, $filename);
+
+        return '/storage/products/' . $filename;
     }
 
     /**
@@ -149,9 +154,9 @@ class ProductService
     {
         if (! $imageUrl) return;
         if (! str_starts_with($imageUrl, '/storage/products/')) return;
-        $relative = 'public/' . substr($imageUrl, strlen('/storage/'));
-        if (Storage::exists($relative)) {
-            Storage::delete($relative);
+        $path = public_path(ltrim($imageUrl, '/'));
+        if (is_file($path)) {
+            @unlink($path);
         }
     }
 
