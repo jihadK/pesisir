@@ -54,6 +54,11 @@ class SalesOrderService
             $this->saveItems($so, $payload['items']);
             $this->recalcTotals($so);
 
+            // Booking (draft) langsung reserve stock supaya stok available berkurang
+            // walau belum paid. Cancel akan release-nya, mark-paid akan deduct riil.
+            $so->load('items.product');
+            $this->reserveItemsFefo($so, $so->items);
+
             return $so->fresh(['items']);
         });
     }
@@ -68,6 +73,11 @@ class SalesOrderService
         }
 
         return DB::transaction(function () use ($so, $payload) {
+            // Release reservasi lama dulu sebelum item lama dihapus, supaya stok
+            // tersedia kembali untuk validasi reserve berdasarkan items baru.
+            $so->load('items');
+            $this->releaseItemsFefo($so, $so->items);
+
             $so->update([
                 'customer_id'        => $payload['customer_id'],
                 'warehouse_id'       => $payload['warehouse_id'],
@@ -88,12 +98,16 @@ class SalesOrderService
             $this->saveItems($so, $payload['items']);
             $this->recalcTotals($so);
 
+            $so->load('items.product');
+            $this->reserveItemsFefo($so, $so->items);
+
             return $so->fresh(['items']);
         });
     }
 
     /**
-     * Confirm SO → reserve stock di tbs_stock_balances.
+     * Confirm SO → cuma update status. Stock sudah ter-reserve saat draft dibuat,
+     * jadi tidak perlu reserve lagi di sini (kalau iya, jadi double).
      */
     public function confirm(SalesOrder $so, int $userId): SalesOrder
     {
@@ -101,65 +115,12 @@ class SalesOrderService
             throw new \RuntimeException('SO ini tidak bisa di-confirm pada status saat ini.');
         }
 
-        return DB::transaction(function () use ($so, $userId) {
-            $so->load('items');
+        $so->update([
+            'status'      => SalesOrder::STATUS_CONFIRMED,
+            'approved_by' => $userId,
+        ]);
 
-            // Validate stock availability per item (sebelum reserve apapun)
-            foreach ($so->items as $item) {
-                $available = $this->getAvailable((int) $item->product_id, (int) $so->warehouse_id);
-                if ((float) $item->quantity > $available) {
-                    throw new \RuntimeException(sprintf(
-                        "Stock tidak cukup untuk produk ID %d. Tersedia: %s, dibutuhkan: %s.",
-                        $item->product_id,
-                        number_format($available, 3),
-                        number_format((float) $item->quantity, 3)
-                    ));
-                }
-            }
-
-            // Reserve qty per produk (per warehouse, agregat semua batch).
-            // Strategi: tambah reserved_quantity pada baris tbs_stock_balances mana saja yang
-            // ada quantity untuk produk+warehouse, urut FEFO (expiry naik) sampai tertutup.
-            foreach ($so->items as $item) {
-                $remaining = (float) $item->quantity;
-
-                $balances = DB::table('tbs_stock_balances as sb')
-                    ->leftJoin('tbm_product_batches as b', 'b.id', '=', 'sb.batch_id')
-                    ->where('sb.product_id', $item->product_id)
-                    ->where('sb.warehouse_id', $so->warehouse_id)
-                    ->where('sb.quantity', '>', DB::raw('sb.reserved_quantity'))
-                    ->orderByRaw('b.expiry_date IS NULL, b.expiry_date ASC')
-                    ->orderBy('sb.id')
-                    ->select('sb.id', 'sb.quantity', 'sb.reserved_quantity')
-                    ->lock('FOR UPDATE OF sb')  // Postgres: lock hanya tabel utama (sb), bukan nullable join
-                    ->get();
-
-                foreach ($balances as $bal) {
-                    if ($remaining <= 0) break;
-                    $availableHere = (float) $bal->quantity - (float) $bal->reserved_quantity;
-                    if ($availableHere <= 0) continue;
-                    $take = min($remaining, $availableHere);
-                    DB::table('tbs_stock_balances')
-                        ->where('id', $bal->id)
-                        ->update([
-                            'reserved_quantity' => DB::raw('reserved_quantity + ' . $take),
-                            'last_updated_date' => now(),
-                        ]);
-                    $remaining -= $take;
-                }
-
-                if ($remaining > 0.001) {
-                    throw new \RuntimeException("Reserve gagal: stock berubah saat proses (race condition). Coba lagi.");
-                }
-            }
-
-            $so->update([
-                'status'      => SalesOrder::STATUS_CONFIRMED,
-                'approved_by' => $userId,
-            ]);
-
-            return $so;
-        });
+        return $so;
     }
 
     /**
@@ -172,35 +133,10 @@ class SalesOrderService
         }
 
         return DB::transaction(function () use ($so) {
-            // Release reservations kalau status confirmed
-            if ($so->status === SalesOrder::STATUS_CONFIRMED) {
+            // Draft & Confirmed sama-sama punya reserved_quantity yang harus dilepas.
+            if (in_array($so->status, [SalesOrder::STATUS_DRAFT, SalesOrder::STATUS_CONFIRMED], true)) {
                 $so->load('items');
-                foreach ($so->items as $item) {
-                    $remaining = (float) $item->quantity;
-                    $balances = DB::table('tbs_stock_balances as sb')
-                        ->leftJoin('tbm_product_batches as b', 'b.id', '=', 'sb.batch_id')
-                        ->where('sb.product_id', $item->product_id)
-                        ->where('sb.warehouse_id', $so->warehouse_id)
-                        ->where('sb.reserved_quantity', '>', 0)
-                        ->orderByRaw('b.expiry_date IS NULL, b.expiry_date ASC')
-                        ->orderBy('sb.id')
-                        ->select('sb.id', 'sb.reserved_quantity')
-                        ->lock('FOR UPDATE OF sb')
-                        ->get();
-
-                    foreach ($balances as $bal) {
-                        if ($remaining <= 0) break;
-                        $reserved = (float) $bal->reserved_quantity;
-                        $release = min($remaining, $reserved);
-                        DB::table('tbs_stock_balances')
-                            ->where('id', $bal->id)
-                            ->update([
-                                'reserved_quantity' => DB::raw('reserved_quantity - ' . $release),
-                                'last_updated_date' => now(),
-                            ]);
-                        $remaining -= $release;
-                    }
-                }
+                $this->releaseItemsFefo($so, $so->items);
             }
 
             $so->update(['status' => SalesOrder::STATUS_CANCELLED]);
@@ -384,7 +320,10 @@ class SalesOrderService
     {
         DB::transaction(function () use ($so) {
             $so->load('items');
-            $wasConfirmed = in_array($so->status, [
+            // Draft juga sudah punya reservasi (booking) — perlu di-release dulu
+            // sebelum deduct riil, sama seperti Confirmed/Partial.
+            $hasReservation = in_array($so->status, [
+                SalesOrder::STATUS_DRAFT,
                 SalesOrder::STATUS_CONFIRMED,
                 SalesOrder::STATUS_PARTIAL,
             ], true);
@@ -392,9 +331,9 @@ class SalesOrderService
             foreach ($so->items as $item) {
                 $remaining = (float) $item->quantity;
 
-                // Release reservasi dulu kalau ada (CONFIRMED/PARTIAL) supaya
-                // quantity-reserved punya ruang untuk deduct riil.
-                if ($wasConfirmed) {
+                // Release reservasi dulu supaya quantity-reserved punya ruang
+                // untuk deduct riil.
+                if ($hasReservation) {
                     $resRows = DB::table('tbs_stock_balances as sb')
                         ->leftJoin('tbm_product_batches as b', 'b.id', '=', 'sb.batch_id')
                         ->where('sb.product_id', $item->product_id)
@@ -488,5 +427,83 @@ class SalesOrderService
             ->where('warehouse_id', $warehouseId)
             ->first();
         return (float) ($row->avail ?? 0);
+    }
+
+    /**
+     * Reserve stock FEFO untuk semua item di SO (validasi + tambah reserved_quantity).
+     * Dipakai saat draft dibuat / diupdate. Harus dipanggil di dalam DB::transaction.
+     */
+    private function reserveItemsFefo(SalesOrder $so, iterable $items): void
+    {
+        foreach ($items as $item) {
+            $available = $this->getAvailable((int) $item->product_id, (int) $so->warehouse_id);
+            if ((float) $item->quantity > $available + 0.001) {
+                $sku = $item->product->sku ?? "#{$item->product_id}";
+                throw new \RuntimeException(sprintf(
+                    "Stock tidak cukup untuk produk %s. Tersedia: %s, dibutuhkan: %s.",
+                    $sku, number_format($available, 3), number_format((float) $item->quantity, 3)
+                ));
+            }
+
+            $remaining = (float) $item->quantity;
+            $balances = DB::table('tbs_stock_balances as sb')
+                ->leftJoin('tbm_product_batches as b', 'b.id', '=', 'sb.batch_id')
+                ->where('sb.product_id', $item->product_id)
+                ->where('sb.warehouse_id', $so->warehouse_id)
+                ->where('sb.quantity', '>', DB::raw('sb.reserved_quantity'))
+                ->orderByRaw('b.expiry_date IS NULL, b.expiry_date ASC')
+                ->orderBy('sb.id')
+                ->select('sb.id', 'sb.quantity', 'sb.reserved_quantity')
+                ->lock('FOR UPDATE OF sb')
+                ->get();
+
+            foreach ($balances as $bal) {
+                if ($remaining <= 0) break;
+                $availableHere = (float) $bal->quantity - (float) $bal->reserved_quantity;
+                if ($availableHere <= 0) continue;
+                $take = min($remaining, $availableHere);
+                DB::table('tbs_stock_balances')->where('id', $bal->id)->update([
+                    'reserved_quantity' => DB::raw('reserved_quantity + ' . $take),
+                    'last_updated_date' => now(),
+                ]);
+                $remaining -= $take;
+            }
+
+            if ($remaining > 0.001) {
+                throw new \RuntimeException("Reserve gagal: stock berubah saat proses (race condition). Coba lagi.");
+            }
+        }
+    }
+
+    /**
+     * Release reserved_quantity FEFO sebesar qty item. Aman dipanggil walau item
+     * tidak punya reservasi (tinggal jadi no-op kalau tidak ada baris reserved).
+     */
+    private function releaseItemsFefo(SalesOrder $so, iterable $items): void
+    {
+        foreach ($items as $item) {
+            $remaining = (float) $item->quantity;
+            $balances = DB::table('tbs_stock_balances as sb')
+                ->leftJoin('tbm_product_batches as b', 'b.id', '=', 'sb.batch_id')
+                ->where('sb.product_id', $item->product_id)
+                ->where('sb.warehouse_id', $so->warehouse_id)
+                ->where('sb.reserved_quantity', '>', 0)
+                ->orderByRaw('b.expiry_date IS NULL, b.expiry_date ASC')
+                ->orderBy('sb.id')
+                ->select('sb.id', 'sb.reserved_quantity')
+                ->lock('FOR UPDATE OF sb')
+                ->get();
+
+            foreach ($balances as $bal) {
+                if ($remaining <= 0) break;
+                $reserved = (float) $bal->reserved_quantity;
+                $release = min($remaining, $reserved);
+                DB::table('tbs_stock_balances')->where('id', $bal->id)->update([
+                    'reserved_quantity' => DB::raw('reserved_quantity - ' . $release),
+                    'last_updated_date' => now(),
+                ]);
+                $remaining -= $release;
+            }
+        }
     }
 }
