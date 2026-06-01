@@ -30,17 +30,28 @@
             align-items: flex-start;
             border-bottom: 3px solid #1976d2;
             padding-bottom: 10px;
-            margin-bottom: 14px;
+            margin-bottom: 0;
             gap: 16px;
         }
         .header .brand { display: flex; align-items: flex-start; gap: 12px; flex: 1; }
         .header .brand img { height: 56px; width: auto; flex-shrink: 0; }
         .header h1 { margin: 0; color: #1976d2; font-size: 20px; line-height: 1.2; }
         .header .tagline { font-size: 11px; color: #666; }
-        .header .store-meta { font-size: 11px; color: #555; margin-top: 4px; line-height: 1.45; }
-        .header .store-meta div { display: flex; gap: 4px; }
         .header .doc-info { text-align: right; font-size: 11px; flex-shrink: 0; min-width: 130px; }
         .doc-info strong { color: #1976d2; font-size: 13px; }
+
+        /* Strip alamat + telepon toko: satu baris, rata tengah, di bawah header. */
+        .store-strip {
+            text-align: center;
+            font-size: 11px;
+            color: #555;
+            padding: 6px 0 10px;
+            border-bottom: 1px solid #e3e6ee;
+            margin-bottom: 14px;
+            line-height: 1.5;
+        }
+        .store-strip .sep { margin: 0 10px; color: #c8ccd6; }
+        .store-strip .ico { margin-right: 4px; }
         .meta {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -144,16 +155,27 @@
                 width: 100%;
                 min-height: 0;
                 margin: 8px 0;
-                padding: 14px 14px 18px;
+                padding: 14px 12px 18px;
                 box-shadow: none;
             }
             .toolbar { padding: 0 12px; }
-            .header { flex-direction: column; align-items: flex-start; gap: 8px; }
-            .header .doc-info { text-align: left; min-width: 0; }
-            .meta { grid-template-columns: 1fr; gap: 8px; }
+            /* Header tetap 2 kolom (logo+brand kiri, no.order kanan) seperti tampilan web */
+            .header { gap: 10px; }
+            .header .brand { gap: 8px; }
+            .header .brand img { height: 42px; }
+            .header h1 { font-size: 15px; }
+            .header .tagline { font-size: 10px; }
+            .header .doc-info { font-size: 10px; min-width: 90px; }
+            .doc-info strong { font-size: 11px; }
+            .store-strip { font-size: 10px; padding: 6px 0 8px; }
+            .store-strip .sep { margin: 0 6px; }
+            /* Customer & Detail tetap 2 kolom seperti tampilan web */
+            .meta { grid-template-columns: 1fr 1fr; gap: 10px; padding: 8px 10px; font-size: 11px; }
+            .meta h3 { font-size: 10px; }
             .lunas-stamp { font-size: 38px; padding: 8px 24px; letter-spacing: 6px; }
-            table { font-size: 11px; }
-            th, td { padding: 6px; }
+            table { font-size: 10.5px; }
+            th { font-size: 10px; padding: 6px 5px; }
+            td { padding: 6px 5px; }
             .totals { width: 100%; }
         }
     </style>
@@ -363,14 +385,6 @@ function downloadAsImage() {
             <h1>{{ config('app.name', 'Pesisir Fresh Fish') }}</h1>
             <div class="tagline">Ikan Segar dari Laut Pesisir</div>
             <div class="tagline">{{ $so->isPaid() ? 'INVOICE (Lunas)' : 'Tagihan / Proforma Invoice' }}</div>
-            <div class="store-meta">
-                @if($storeAddress)
-                    <div>📍 <span>{{ $storeAddress }}</span></div>
-                @endif
-                @if($storePhone)
-                    <div>📞 <span>{{ $storePhone }}</span></div>
-                @endif
-            </div>
         </div>
     </div>
     <div class="doc-info">
@@ -382,13 +396,23 @@ function downloadAsImage() {
     </div>
 </div>
 
+@if($storeAddress || $storePhone)
+<div class="store-strip">
+    @if($storeAddress)
+        <span class="line"><span class="ico">📍</span>{{ $storeAddress }}</span>
+    @endif
+    @if($storeAddress && $storePhone)<span class="sep">•</span>@endif
+    @if($storePhone)
+        <span class="line"><span class="ico">📞</span>{{ $storePhone }}</span>
+    @endif
+</div>
+@endif
+
 <div class="meta">
     <div>
         <h3>Customer</h3>
         <div><strong>{{ $so->customer->name }}</strong></div>
-        <div>{{ $so->customer->code }}</div>
         @if($so->customer->phone)<div>📞 {{ $so->customer->phone }}</div>@endif
-        @if($so->customer->address)<div style="font-size:11px;color:#666;margin-top:2px">{{ $so->customer->address }}</div>@endif
     </div>
     <div>
         <h3>Detail</h3>
@@ -420,26 +444,26 @@ function downloadAsImage() {
                 @endif
             </td>
             <td class="text-end">{{ $qF }} {{ $item->uom->code }}</td>
-            <td class="text-end">Rp {{ number_format((float)$item->unit_price, 0, ',', '.') }}</td>
-            <td class="text-end">Rp {{ number_format((float)$item->subtotal, 0, ',', '.') }}</td>
+            <td class="text-end">{{ number_format((float)$item->unit_price, 0, ',', '.') }}</td>
+            <td class="text-end">{{ number_format((float)$item->subtotal, 0, ',', '.') }}</td>
         </tr>
     @endforeach
     </tbody>
 </table>
 
 <table class="totals">
-    <tr><td>Subtotal</td><td class="text-end">Rp {{ number_format((float)$so->subtotal, 0, ',', '.') }}</td></tr>
+    <tr><td>Subtotal</td><td class="text-end">{{ number_format((float)$so->subtotal, 0, ',', '.') }}</td></tr>
     @if((float)$so->discount_amount > 0)
-        <tr><td>Diskon</td><td class="text-end">−Rp {{ number_format((float)$so->discount_amount, 0, ',', '.') }}</td></tr>
+        <tr><td>Diskon</td><td class="text-end">−{{ number_format((float)$so->discount_amount, 0, ',', '.') }}</td></tr>
     @endif
     @if((float)$so->shipping_cost > 0)
-        <tr><td>Ongkir</td><td class="text-end">Rp {{ number_format((float)$so->shipping_cost, 0, ',', '.') }}</td></tr>
+        <tr><td>Ongkir</td><td class="text-end">{{ number_format((float)$so->shipping_cost, 0, ',', '.') }}</td></tr>
     @endif
     @if((float)$so->packing_cost > 0)
-        <tr><td>Biaya Packing</td><td class="text-end">Rp {{ number_format((float)$so->packing_cost, 0, ',', '.') }}</td></tr>
+        <tr><td>Biaya Packing</td><td class="text-end">{{ number_format((float)$so->packing_cost, 0, ',', '.') }}</td></tr>
     @endif
     @if((float)$so->other_cost_amount > 0)
-        <tr><td>Biaya Lain-lain{{ $so->other_cost_desc ? ' ('.$so->other_cost_desc.')' : '' }}</td><td class="text-end">Rp {{ number_format((float)$so->other_cost_amount, 0, ',', '.') }}</td></tr>
+        <tr><td>Biaya Lain-lain{{ $so->other_cost_desc ? ' ('.$so->other_cost_desc.')' : '' }}</td><td class="text-end">{{ number_format((float)$so->other_cost_amount, 0, ',', '.') }}</td></tr>
     @endif
     <tr class="total-row"><td>TOTAL</td><td class="text-end">Rp {{ number_format((float)$so->total_amount, 0, ',', '.') }}</td></tr>
 </table>
