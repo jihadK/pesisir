@@ -76,6 +76,16 @@ class PaymentMethodController extends Controller
             ->with('flash', Flash::ok("Metode pembayaran '{$paymentMethod->name}' berhasil diperbarui.", 'Berhasil Diperbarui'));
     }
 
+    /**
+     * Halaman publik viewer QRIS — menampilkan gambar + tombol Download.
+     * Dipakai sebagai link QRIS di pesan WhatsApp ke customer.
+     */
+    public function qrisView(PaymentMethod $paymentMethod): View
+    {
+        abort_unless($paymentMethod->qris_image_url, 404, 'QRIS belum diupload.');
+        return view('payment_methods.qris_view', ['method' => $paymentMethod]);
+    }
+
     public function destroy(PaymentMethod $paymentMethod): RedirectResponse
     {
         $name = $paymentMethod->name;

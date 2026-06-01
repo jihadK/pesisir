@@ -2,38 +2,83 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $so->isPaid() ? 'Invoice' : 'Proforma' }} {{ $so->so_number }}</title>
     <style>
+        @page { size: A4; margin: 12mm; }
         * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; color: #222; margin: 0; padding: 24px; max-width: 720px; margin-left:auto; margin-right:auto; font-size: 13px; }
-        .header { display:flex; justify-content:space-between; align-items:center; border-bottom: 3px solid #1976d2; padding-bottom: 12px; margin-bottom: 16px; gap: 16px; }
-        .header .brand { display:flex; align-items:center; gap: 12px; }
-        .header .brand img { height: 56px; width: auto; }
-        .header h1 { margin: 0; color: #1976d2; font-size: 22px; }
+        html, body { margin: 0; padding: 0; background: #eceef2; }
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            color: #222;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        /* Lembar dokumen seukuran A4 (210mm × 297mm). */
+        .sheet {
+            position: relative;
+            width: 210mm;
+            min-height: 297mm;
+            margin: 16px auto;
+            padding: 14mm 12mm 12mm;
+            background: #fff;
+            box-shadow: 0 4px 16px rgba(0,0,0,.08);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 3px solid #1976d2;
+            padding-bottom: 10px;
+            margin-bottom: 14px;
+            gap: 16px;
+        }
+        .header .brand { display: flex; align-items: flex-start; gap: 12px; flex: 1; }
+        .header .brand img { height: 56px; width: auto; flex-shrink: 0; }
+        .header h1 { margin: 0; color: #1976d2; font-size: 20px; line-height: 1.2; }
         .header .tagline { font-size: 11px; color: #666; }
-        .header .doc-info { text-align: right; font-size: 12px; }
-        .doc-info strong { color: #1976d2; font-size: 14px; }
-        .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 16px; padding: 12px; background:#f5f7fb; border-radius: 6px; }
-        .meta h3 { margin: 0 0 6px 0; font-size: 12px; color: #555; text-transform: uppercase; letter-spacing:0.5px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
-        th { background: #1976d2; color: white; padding: 8px; text-align: left; font-size: 12px; }
-        td { padding: 8px; border-bottom: 1px solid #eee; }
+        .header .store-meta { font-size: 11px; color: #555; margin-top: 4px; line-height: 1.45; }
+        .header .store-meta div { display: flex; gap: 4px; }
+        .header .doc-info { text-align: right; font-size: 11px; flex-shrink: 0; min-width: 130px; }
+        .doc-info strong { color: #1976d2; font-size: 13px; }
+        .meta {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 14px;
+            padding: 10px 12px;
+            background: #f5f7fb;
+            border-radius: 6px;
+        }
+        .meta h3 {
+            margin: 0 0 4px;
+            font-size: 11px;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+        th { background: #1976d2; color: #fff; padding: 7px 8px; text-align: left; font-size: 11px; }
+        td { padding: 7px 8px; border-bottom: 1px solid #eee; vertical-align: top; }
         .text-end { text-align: right; }
-        .totals { margin-left: auto; width: 280px; }
+        .totals { margin-left: auto; width: 260px; }
         .totals td { border: none; padding: 4px 8px; }
-        .totals .total-row { border-top: 2px solid #1976d2; font-size: 16px; font-weight: bold; color: #1976d2; }
-        .payment-section { margin-top: 24px; padding: 16px; background:#fff8e1; border-left: 4px solid #ff9800; border-radius:4px; }
-        .payment-section h3 { margin: 0 0 10px 0; color: #e65100; font-size: 14px; }
-        .pm-list { display: flex; flex-direction: column; gap: 8px; }
-        .pm-item { padding: 8px 12px; background: white; border-radius: 4px; border-left: 3px solid transparent; }
-        .pm-item.pm-chosen { border-left-color: #2e7d32; background: #e8f5e9; }
-        .pm-item .pm-name { font-weight: bold; }
-        .pm-item .pm-chosen-tag { display:inline-block; margin-left:6px; padding:2px 8px; background:#2e7d32; color:white; font-size:10px; border-radius:10px; vertical-align:middle; }
-        .pm-item .pm-detail { font-size: 12px; color: #555; }
-        .qris-img { max-width: 140px; display: block; margin: 6px 0; }
-        .footer-note { margin-top: 20px; padding: 12px; text-align: center; color: #777; font-size: 11px; border-top: 1px dashed #ddd; }
-        .signoff { margin-top: 24px; font-size: 12px; }
-        .signoff .label { color:#555; }
+        .totals .total-row {
+            border-top: 2px solid #1976d2;
+            font-size: 15px;
+            font-weight: bold;
+            color: #1976d2;
+        }
+        .footer-note {
+            margin-top: 18px;
+            padding: 10px;
+            text-align: center;
+            color: #777;
+            font-size: 11px;
+            border-top: 1px dashed #ddd;
+        }
+        .signoff { margin-top: 20px; font-size: 12px; }
+        .signoff .label { color: #555; }
         .signoff .brand { font-weight: bold; color: #1976d2; margin-top: 28px; }
         .lunas-stamp {
             position: absolute;
@@ -54,24 +99,89 @@
             z-index: 5;
             white-space: nowrap;
         }
-        body { position: relative; }
+
+        /* Toolbar */
+        .toolbar {
+            max-width: 210mm;
+            margin: 12px auto 0;
+            padding: 0 8px;
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 8px 14px;
+            background: #1976d2;
+            color: #fff;
+            border-radius: 4px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-wa { background: #25D366; }
+        .btn-wa:hover { background: #128C7E; }
+        .btn-wa[disabled] { background: #aaa; cursor: not-allowed; }
+        .btn-img { background: #9c27b0; }
+        .btn-img:hover { background: #7b1fa2; }
+        .btn-img[disabled] { background: #aaa; cursor: not-allowed; }
+        .btn-dl { background: #ef6c00; }
+        .btn-dl:hover { background: #e65100; }
+
         @media print {
-            body { padding: 0; }
+            html, body { background: #fff; }
+            .sheet { box-shadow: none; margin: 0; padding: 0; width: auto; min-height: 0; }
             .no-print { display: none !important; }
         }
-        .toolbar { text-align: right; margin-bottom: 12px; display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap; }
-        .btn { padding: 8px 14px; background:#1976d2; color: white; border-radius:4px; text-decoration:none; display:inline-flex; align-items:center; gap:6px; font-size:13px; border:none; cursor:pointer; }
-        .btn-wa { background:#25D366; }
-        .btn-wa:hover { background:#128C7E; }
-        .btn-wa[disabled] { background:#aaa; cursor:not-allowed; }
-        .btn-img { background:#9c27b0; }
-        .btn-img:hover { background:#7b1fa2; }
-        .btn-img[disabled] { background:#aaa; cursor:not-allowed; }
+
+        /* Mobile: kompres tampilan biar lembar A4 muat di layar tanpa ruang kosong besar. */
+        @media (max-width: 820px) {
+            .sheet {
+                width: 100%;
+                min-height: 0;
+                margin: 8px 0;
+                padding: 14px 14px 18px;
+                box-shadow: none;
+            }
+            .toolbar { padding: 0 12px; }
+            .header { flex-direction: column; align-items: flex-start; gap: 8px; }
+            .header .doc-info { text-align: left; min-width: 0; }
+            .meta { grid-template-columns: 1fr; gap: 8px; }
+            .lunas-stamp { font-size: 38px; padding: 8px 24px; letter-spacing: 6px; }
+            table { font-size: 11px; }
+            th, td { padding: 6px; }
+            .totals { width: 100%; }
+        }
     </style>
 </head>
 <body>
 
-@php $isCustomerView = request()->routeIs('sales_orders.public-print'); @endphp
+@php
+    $isCustomerView = request()->routeIs('sales_orders.public-print');
+
+    // Normalize nomor HP toko dari .env: +62/62 di depan diganti 0.
+    $rawStorePhone = (string) config('app.store_phone', '');
+    $digits = preg_replace('/\D+/', '', $rawStorePhone);
+    $storePhone = '';
+    if ($digits !== '') {
+        if (str_starts_with($digits, '62')) {
+            $storePhone = '0' . substr($digits, 2);
+        } elseif (str_starts_with($digits, '0')) {
+            $storePhone = $digits;
+        } else {
+            $storePhone = $digits;
+        }
+    }
+
+    // Alamat toko = alamat warehouse utama (WH-LAMONGAN). Fallback ke warehouse
+    // yang dipakai SO kalau WH-LAMONGAN belum punya alamat.
+    $storeAddress = \App\Models\Warehouse::where('code', 'WH-LAMONGAN')->value('address')
+        ?: $so->warehouse?->address;
+@endphp
 
 @if(! $isCustomerView)
 <div class="toolbar no-print">
@@ -97,11 +207,20 @@
         $docUrl = \Illuminate\Support\Facades\URL::signedRoute('sales_orders.public-print', ['salesOrder' => $so->id]);
         $qrisUrl = $pm && $pm->qris_image_url ? $pm->qris_image_display_url : null;
 
+        // URL viewer QRIS (ada tombol download). Pakai kalau payment method punya
+        // gambar QRIS — supaya customer bisa unduh, bukan cuma lihat gambar mentah.
+        $qrisViewerUrl = ($pm && $pm->qris_image_url)
+            ? route('payment_methods.qris-view', ['paymentMethod' => $pm->id])
+            : null;
+
         // Build WA message sesuai format UAT
+        $isPaid = $so->isPaid();
         $lines = [];
         $lines[] = "Halo Bapak/Ibu {$so->customer->name} 🙏";
         $lines[] = "";
-        $lines[] = "Terima kasih atas pesanan Anda. Berikut detail tagihan:";
+        $lines[] = $isPaid
+            ? "Terima kasih atas pesanan Anda. Berikut detail pemesanan anda :"
+            : "Terima kasih atas pesanan Anda. Berikut detail tagihan:";
         $lines[] = "";
         $lines[] = "No. Order: {$so->so_number}";
         $lines[] = "Tanggal: " . $so->order_date->format('d M Y');
@@ -115,33 +234,40 @@
         $lines[] = "";
         $lines[] = "TOTAL: Rp " . number_format((float)$so->total_amount, 0, ',', '.');
         $lines[] = "";
-        if ($isQris) {
-            $lines[] = "Pembayaran: QRIS";
-            $lines[] = "";
-            if ($qrisUrl) {
-                $lines[] = "Gambar QRIS dapat langsung diunduh di sini: {$qrisUrl}";
+
+        // Sudah lunas → tidak perlu instruksi bayar lagi.
+        if (! $isPaid) {
+            if ($isQris) {
+                $lines[] = "Pembayaran: QRIS";
+                $lines[] = "";
+                if ($qrisViewerUrl) {
+                    $lines[] = "Gambar QRIS dapat langsung diunduh di sini: {$qrisViewerUrl}";
+                } else {
+                    $lines[] = "Gambar QRIS dapat dilihat pada link kuitansi di bawah.";
+                }
+            } elseif ($isBank) {
+                $lines[] = "Pembayaran: Transfer Bank";
+                $lines[] = "";
+                $lines[] = "Mohon transfer ke rekening berikut:";
+                $lines[] = "{$pm->bank_name} {$pm->account_no}";
+                $lines[] = "a.n. {$pm->account_holder}";
             } else {
-                $lines[] = "Gambar QRIS dapat dilihat pada link kuitansi di bawah.";
+                $lines[] = "Pembayaran: Belum ditentukan";
+                $lines[] = "";
+                if ($qrisViewerUrl) {
+                    $lines[] = "Bisa via QRIS — unduh gambarnya di sini: {$qrisViewerUrl}";
+                } else {
+                    $lines[] = "Disarankan membawa uang pas saat pengambilan.";
+                }
             }
-        } elseif ($isBank) {
-            $lines[] = "Pembayaran: Transfer Bank";
             $lines[] = "";
-            $lines[] = "Mohon transfer ke rekening berikut:";
-            $lines[] = "{$pm->bank_name} {$pm->account_no}";
-            $lines[] = "a.n. {$pm->account_holder}";
-        } else {
-            $lines[] = "Pembayaran: Belum ditentukan";
-            $lines[] = "";
-            if ($qrisUrl) {
-                $lines[] = "Bisa via QRIS — unduh gambarnya di sini: {$qrisUrl}";
-            } else {
-                $lines[] = "Disarankan membawa uang pas saat pengambilan.";
-            }
         }
+
+        $lines[] = $isPaid
+            ? "Invoice pelunasan dapat dilihat pada link berikut: {$docUrl}"
+            : "Kuitansi tagihan dapat dilihat pada link berikut: {$docUrl}";
         $lines[] = "";
-        $lines[] = "Kuitansi tagihan dapat dilihat pada link berikut: {$docUrl}";
-        $lines[] = "";
-        $lines[] = $so->isPaid()
+        $lines[] = $isPaid
             ? "Terima kasih atas pembayaran Anda. Invoice resmi terlampir di link di atas 🙏"
             : "Mohon konfirmasi setelah pembayaran, invoice akan dikirimkan setelah konfirmasi pembayaran. Terima kasih 🙏";
         $lines[] = "";
@@ -168,6 +294,14 @@
     <button class="btn" onclick="window.print()">🖨️ Print / Save as PDF</button>
     <a href="{{ route('sales_orders.show', $so) }}" class="btn" style="background:#666">← Kembali</a>
 </div>
+@else
+{{-- Customer view: tampilkan tombol Download {{ $docLabel }} + Print. --}}
+<div class="toolbar no-print">
+    <button id="btn_download_img" class="btn btn-dl" onclick="downloadAsImage()">
+        <span style="font-size:16px">⬇️</span> Download {{ $so->isPaid() ? 'Invoice' : 'Kuitansi' }}
+    </button>
+    <button class="btn" onclick="window.print()">🖨️ Print / Save as PDF</button>
+</div>
 @endif
 
 <!-- html2canvas dari CDN, load di-defer agar tidak block render -->
@@ -187,7 +321,9 @@ function downloadAsImage() {
     const toolbar = document.querySelector('.toolbar');
     if (toolbar) toolbar.style.display = 'none';
 
-    html2canvas(document.body, {
+    const target = document.querySelector('.sheet') || document.body;
+
+    html2canvas(target, {
         scale: 2,              // 2x = lebih tajam (mirip Retina)
         backgroundColor: '#ffffff',
         useCORS: true,
@@ -195,8 +331,10 @@ function downloadAsImage() {
     }).then(canvas => {
         if (toolbar) toolbar.style.display = '';
 
+        const isPaid = {{ $so->isPaid() ? 'true' : 'false' }};
+        const baseName = (isPaid ? 'Invoice-' : 'Kuitansi-') + '{{ $so->so_number }}';
         const link = document.createElement('a');
-        link.download = 'Proforma-{{ $so->so_number }}'.replace(/\//g, '-') + '.png';
+        link.download = baseName.replace(/\//g, '-') + '.png';
         link.href = canvas.toDataURL('image/png');
         link.click();
 
@@ -212,6 +350,8 @@ function downloadAsImage() {
 }
 </script>
 
+<div class="sheet">
+
 @if($so->isPaid())
     <div class="lunas-stamp">LUNAS</div>
 @endif
@@ -223,6 +363,14 @@ function downloadAsImage() {
             <h1>{{ config('app.name', 'Pesisir Fresh Fish') }}</h1>
             <div class="tagline">Ikan Segar dari Laut Pesisir</div>
             <div class="tagline">{{ $so->isPaid() ? 'INVOICE (Lunas)' : 'Tagihan / Proforma Invoice' }}</div>
+            <div class="store-meta">
+                @if($storeAddress)
+                    <div>📍 <span>{{ $storeAddress }}</span></div>
+                @endif
+                @if($storePhone)
+                    <div>📞 <span>{{ $storePhone }}</span></div>
+                @endif
+            </div>
         </div>
     </div>
     <div class="doc-info">
@@ -299,7 +447,7 @@ function downloadAsImage() {
 {{-- Informasi pembayaran sengaja di-hide; sudah dicantumkan di pesan WhatsApp. --}}
 
 @if($so->notes)
-    <div style="margin-top:16px;padding:10px;background:#f5f5f5;border-radius:4px;font-size:12px">
+    <div style="margin-top:14px;padding:10px;background:#f5f5f5;border-radius:4px;font-size:12px">
         <strong>Catatan:</strong> {{ $so->notes }}
     </div>
 @endif
@@ -317,6 +465,8 @@ function downloadAsImage() {
         Terima kasih atas pesanan Anda 🙏
     @endif
 </div>
+
+</div>{{-- /.sheet --}}
 
 </body>
 </html>

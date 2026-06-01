@@ -19,6 +19,20 @@ class StockMovementService
      *   - 'monthly' : reset 1 setiap bulan
      *   - 'never'   : tidak reset
      */
+    /**
+     * Peta doc_type → (table, kolom nomor). Dipakai untuk self-healing: kalau
+     * row sequence tidak sinkron (mis. di-reseed tapi data lama masih ada),
+     * kandidat nomor di-naikkan ke max(existing)+1 supaya tidak bentrok.
+     */
+    private const DOC_TARGETS = [
+        'SM'  => ['tbh_stock_movements', 'movement_number'],
+        'SO'  => ['tbr_sales_orders',    'so_number'],
+        'PO'  => ['tbr_purchase_orders', 'po_number'],
+        'DO'  => ['tbr_delivery_orders', 'do_number'],
+        'INV' => ['tbr_invoices',        'invoice_number'],
+        'PAY' => ['tbr_payments',        'payment_number'],
+    ];
+
     public function nextDocNumber(string $docType): string
     {
         return DB::transaction(function () use ($docType) {
@@ -44,6 +58,21 @@ class StockMovementService
             }
 
             $nextNumber = $needsReset ? 1 : ((int) $row->current_number + 1);
+
+            // Self-healing: hindari bentrok dengan nomor yang SUDAH ada di tabel
+            // tujuan (sequence row bisa stale karena seed/restore). Ambil max
+            // numerik dari tail nomor untuk prefix+tahun, naikkan kalau perlu.
+            if (isset(self::DOC_TARGETS[$docType])) {
+                [$targetTable, $targetCol] = self::DOC_TARGETS[$docType];
+                $prefixYear = sprintf('%s%d/', $row->prefix, $today->year);
+                $maxTail = (int) DB::table($targetTable)
+                    ->where($targetCol, 'like', $prefixYear . '%')
+                    ->selectRaw("COALESCE(MAX(CAST(SUBSTRING({$targetCol} FROM '[0-9]+$') AS INTEGER)), 0) AS tail")
+                    ->value('tail');
+                if ($maxTail >= $nextNumber) {
+                    $nextNumber = $maxTail + 1;
+                }
+            }
 
             DB::table('tbs_document_sequences')
                 ->where('id', $row->id)

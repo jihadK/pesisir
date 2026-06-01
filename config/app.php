@@ -22,6 +22,13 @@ return [
     'portal_admin_wa' => env('PORTAL_ADMIN_WA', ''),
 
     /*
+    | Nomor HP toko untuk kop kuitansi/invoice. Bisa format apa saja (62.../0.../+62...).
+    | Template akan otomatis menormalkan jadi format 08xx... saat ditampilkan.
+    | Kalau STORE_PHONE kosong, fallback ke PORTAL_ADMIN_WA.
+    */
+    'store_phone' => env('STORE_PHONE', env('PORTAL_ADMIN_WA', '')),
+
+    /*
     | Link sosial media untuk customer portal (banner hero).
     | Kosongkan kalau tidak ingin ditampilkan.
     */

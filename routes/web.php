@@ -70,6 +70,11 @@ Route::get('/p/so/{salesOrder}/receipt', [SalesOrderController::class, 'publicPr
     ->middleware('signed')
     ->name('sales_orders.public-print');
 
+// Public — viewer QRIS dengan tombol Download (dipakai di pesan WA customer)
+Route::get('/p/qris/{paymentMethod}', [PaymentMethodController::class, 'qrisView'])
+    ->whereNumber('paymentMethod')
+    ->name('payment_methods.qris-view');
+
 // ===== ADMIN AREA (semua di prefix /admin) =====
 Route::prefix('admin')->group(function () {
 
