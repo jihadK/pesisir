@@ -53,6 +53,21 @@ class DashboardController extends Controller
             'due7_count'    => (int)   $arBase->clone()->whereBetween('due_date', [$today, $today->copy()->addDays(6)])->count(),
         ];
 
+        // ===== Pengunjung Portal & Lead via WA =====
+        $visitorStats   = $this->trafficStats('tbh_visit_logs');
+        $visitorChart   = $this->trafficDaily('tbh_visit_logs', 30);
+        $leadStats      = $this->trafficStats('tbh_portal_leads');
+        $leadChart      = $this->trafficDaily('tbh_portal_leads', 30);
+        try {
+            $recentLeads = DB::table('tbh_portal_leads')
+                ->orderByDesc('created_at')
+                ->limit(10)
+                ->get(['id', 'items', 'item_count', 'total_amount', 'created_at']);
+        } catch (\Throwable $e) {
+            // Tabel belum di-patch (jalankan appplandoc/41_PATCH_VISIT_LOGS_AND_PORTAL_LEADS.sql)
+            $recentLeads = collect();
+        }
+
         return view('dashboard', [
             'period'          => $period,
             'periodSummary'   => $periodSummary,
@@ -63,7 +78,59 @@ class DashboardController extends Controller
             'unpaidTotal'     => $unpaidTotal,
             'unpaidCount'     => $unpaidCount,
             'arWidgets'       => $arWidgets,
+            'visitorStats'    => $visitorStats,
+            'visitorChart'    => $visitorChart,
+            'leadStats'       => $leadStats,
+            'leadChart'       => $leadChart,
+            'recentLeads'     => $recentLeads,
         ]);
+    }
+
+    /**
+     * Hitung statistik traffic (today / 7d / 30d) dari sebuah tabel yang
+     * punya kolom `created_at`. Aman dipanggil walau tabel belum ada
+     * (return zeros).
+     */
+    private function trafficStats(string $table): array
+    {
+        try {
+            $today = (int) DB::table($table)->whereDate('created_at', now()->toDateString())->count();
+            $last7 = (int) DB::table($table)->where('created_at', '>=', now()->subDays(6)->startOfDay())->count();
+            $last30 = (int) DB::table($table)->where('created_at', '>=', now()->subDays(29)->startOfDay())->count();
+            return ['today' => $today, 'last7' => $last7, 'last30' => $last30];
+        } catch (\Throwable $e) {
+            return ['today' => 0, 'last7' => 0, 'last30' => 0];
+        }
+    }
+
+    /**
+     * Time series harian (N hari terakhir) untuk chart, dari sembarang
+     * tabel ber-kolom `created_at`. Return ['labels' => [...], 'data' => [...]].
+     */
+    private function trafficDaily(string $table, int $days): array
+    {
+        $labels = []; $keyMap = [];
+        for ($i = $days - 1; $i >= 0; $i--) {
+            $d = now()->subDays($i);
+            $k = $d->toDateString();
+            $keyMap[$k] = 0;
+            $labels[] = $d->format('d M');
+        }
+
+        try {
+            $rows = DB::table($table)
+                ->where('created_at', '>=', now()->subDays($days - 1)->startOfDay())
+                ->select(DB::raw("to_char(created_at, 'YYYY-MM-DD') AS bucket"), DB::raw('COUNT(*) AS c'))
+                ->groupBy(DB::raw("to_char(created_at, 'YYYY-MM-DD')"))
+                ->get();
+            foreach ($rows as $r) {
+                if (isset($keyMap[$r->bucket])) $keyMap[$r->bucket] = (int) $r->c;
+            }
+        } catch (\Throwable $e) {
+            // tabel belum ada — biarkan semua 0
+        }
+
+        return ['labels' => $labels, 'data' => array_values($keyMap)];
     }
 
     /**

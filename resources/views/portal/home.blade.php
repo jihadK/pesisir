@@ -369,6 +369,20 @@ function checkoutWA() {
   });
   msg += `\n*TOTAL: ${fmtRp(total)}*\n\nMohon konfirmasi ketersediaan & cara pembayaran. Terima kasih 🙏`;
 
+  // Catat lead (intent checkout via WA) ke backend. Fire-and-forget — kalau
+  // gagal/timeout, JS tetap lanjut buka WhatsApp.
+  try {
+    fetch("{{ route('portal.lead') }}", {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({
+        items: cart.map(i => ({ name: i.name, qty: i.qty, uom: i.uom, price: i.price })),
+        total: total,
+      }),
+      keepalive: true,
+    }).catch(() => {});
+  } catch (_) {}
+
   const url = ADMIN_WA
     ? `https://wa.me/${ADMIN_WA}?text=${encodeURIComponent(msg)}`
     : `https://wa.me/?text=${encodeURIComponent(msg)}`;

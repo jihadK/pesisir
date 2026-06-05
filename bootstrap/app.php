@@ -24,6 +24,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'permission' => \App\Http\Middleware\CheckPermission::class,
         ]);
+        // Endpoint anonim portal (lead tracker) tidak butuh CSRF — dipanggil
+        // via fetch keepalive dari JS sebelum window.open(wa.me).
+        $middleware->validateCsrfTokens(except: [
+            'portal/lead',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Render exception ke format {resCode, resMsg} untuk request yang expects JSON

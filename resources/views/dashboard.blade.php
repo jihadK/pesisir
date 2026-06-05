@@ -215,7 +215,7 @@
 @endif
 
 {{-- ===== Bottom row: Stock low + Unpaid orders ===== --}}
-<div class="row g-4">
+<div class="row g-4 mb-5">
     <div class="col-md-4">
         <a href="{{ route('products.index', ['stock_low' => 1]) }}" class="text-decoration-none">
             <div class="card card-flush h-100 shadow-sm" style="background: linear-gradient(135deg,#fff9e6,#ffe9a8); border:0; cursor:pointer; transition: transform .15s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform=''">
@@ -285,6 +285,117 @@
     </div>
 </div>
 
+{{-- ===== Pengunjung Portal ===== --}}
+<div class="row g-4 mb-5">
+    <div class="col-12">
+        <div class="card card-flush shadow-sm">
+            <div class="card-header pt-5">
+                <div class="card-title flex-column">
+                    <h3 class="fw-bolder mb-1">Pengunjung Customer Portal</h3>
+                    <span class="text-muted fs-7">Halaman portal publik yang dibuka pengunjung</span>
+                </div>
+            </div>
+            <div class="card-body pt-3">
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="p-4 rounded" style="background: linear-gradient(135deg,#e7f4ff,#bcd8ff);">
+                            <div class="text-muted fs-8 fw-semibold text-uppercase">Hari Ini</div>
+                            <div class="fs-2 fw-bolder text-dark">{{ number_format($visitorStats['today'], 0, ',', '.') }}</div>
+                            <div class="fs-8 text-muted">Pengunjung</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-4 rounded" style="background: linear-gradient(135deg,#fff5f0,#ffd5b8);">
+                            <div class="text-muted fs-8 fw-semibold text-uppercase">7 Hari Terakhir</div>
+                            <div class="fs-2 fw-bolder text-dark">{{ number_format($visitorStats['last7'], 0, ',', '.') }}</div>
+                            <div class="fs-8 text-muted">Pengunjung</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-4 rounded" style="background: linear-gradient(135deg,#e8fbef,#a4e7bb);">
+                            <div class="text-muted fs-8 fw-semibold text-uppercase">30 Hari Terakhir</div>
+                            <div class="fs-2 fw-bolder text-dark">{{ number_format($visitorStats['last30'], 0, ',', '.') }}</div>
+                            <div class="fs-8 text-muted">Pengunjung</div>
+                        </div>
+                    </div>
+                </div>
+                <div id="chart_visitor" style="min-height:260px"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- ===== Lead via WhatsApp ===== --}}
+<div class="row g-4 mb-5">
+    <div class="col-12">
+        <div class="card card-flush shadow-sm">
+            <div class="card-header pt-5">
+                <div class="card-title flex-column">
+                    <h3 class="fw-bolder mb-1">Lead via WhatsApp</h3>
+                    <span class="text-muted fs-7">Customer yang klik checkout & diarahkan ke WA admin (belum tentu jadi order)</span>
+                </div>
+            </div>
+            <div class="card-body pt-3">
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="p-4 rounded" style="background: linear-gradient(135deg,#f3e8ff,#d0a6ff);">
+                            <div class="text-muted fs-8 fw-semibold text-uppercase">Hari Ini</div>
+                            <div class="fs-2 fw-bolder text-dark">{{ number_format($leadStats['today'], 0, ',', '.') }}</div>
+                            <div class="fs-8 text-muted">Lead</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-4 rounded" style="background: linear-gradient(135deg,#fff5f0,#ffd5b8);">
+                            <div class="text-muted fs-8 fw-semibold text-uppercase">7 Hari Terakhir</div>
+                            <div class="fs-2 fw-bolder text-dark">{{ number_format($leadStats['last7'], 0, ',', '.') }}</div>
+                            <div class="fs-8 text-muted">Lead</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-4 rounded" style="background: linear-gradient(135deg,#e8fbef,#a4e7bb);">
+                            <div class="text-muted fs-8 fw-semibold text-uppercase">30 Hari Terakhir</div>
+                            <div class="fs-2 fw-bolder text-dark">{{ number_format($leadStats['last30'], 0, ',', '.') }}</div>
+                            <div class="fs-8 text-muted">Lead</div>
+                        </div>
+                    </div>
+                </div>
+                <div id="chart_lead" style="min-height:260px"></div>
+
+                <h4 class="fw-bolder mt-6 mb-3 fs-6">10 Lead Terakhir</h4>
+                <table class="table table-row-bordered align-middle gy-2">
+                    <thead>
+                        <tr class="fw-bold text-muted bg-light fs-7 text-uppercase">
+                            <th class="ps-3">Waktu</th>
+                            <th>Item</th>
+                            <th class="text-end pe-3">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($recentLeads as $lead)
+                            @php
+                                $items = is_string($lead->items) ? (json_decode($lead->items, true) ?: []) : (array) $lead->items;
+                                $preview = collect($items)->take(2)->map(fn($i) => ($i['name'] ?? '-') . ' ×' . rtrim(rtrim(number_format((float)($i['qty'] ?? 0), 3, ',', '.'), '0'), ','))->implode(', ');
+                                $more = max(0, count($items) - 2);
+                                $createdAt = \Carbon\Carbon::parse($lead->created_at);
+                            @endphp
+                            <tr>
+                                <td class="ps-3 fs-7">{{ $createdAt->format('d M Y H:i') }}</td>
+                                <td class="fs-7">
+                                    {{ $preview }}@if($more > 0) <span class="text-muted">+{{ $more }} lainnya</span>@endif
+                                    <div class="text-muted fs-8">{{ $lead->item_count }} item</div>
+                                </td>
+                                <td class="text-end pe-3 fw-bold">Rp {{ number_format((float)$lead->total_amount, 0, ',', '.') }}</td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="3" class="text-center text-muted py-5">Belum ada lead masuk.</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -327,6 +438,54 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     new ApexCharts(document.getElementById('chart_trend'), options).render();
+
+    // ===== Chart Pengunjung Portal (30 hari) =====
+    const visitorChart = @json($visitorChart);
+    new ApexCharts(document.getElementById('chart_visitor'), {
+        chart: { type: 'area', height: 260, toolbar: { show: false }, animations: { speed: 250 } },
+        colors: ['#3E97FF'],
+        series: [{ name: 'Pengunjung', data: visitorChart.data }],
+        xaxis: {
+            categories: visitorChart.labels,
+            labels: { style: { fontSize: '10px', colors: '#7E8299' }, rotate: -45, hideOverlappingLabels: true },
+            axisBorder: { show: false }, axisTicks: { show: false },
+        },
+        yaxis: {
+            labels: { style: { colors: '#7E8299', fontSize: '11px' }, formatter: v => Math.round(v).toLocaleString('id-ID') },
+            min: 0,
+        },
+        stroke: { curve: 'smooth', width: 3 },
+        fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 100] } },
+        dataLabels: { enabled: false },
+        legend: { show: false },
+        grid: { borderColor: '#EFF2F5', strokeDashArray: 4 },
+        tooltip: { y: { formatter: v => Math.round(v).toLocaleString('id-ID') + ' pengunjung' } },
+        markers: { size: 3, hover: { size: 5 } },
+    }).render();
+
+    // ===== Chart Lead via WhatsApp (30 hari) =====
+    const leadChart = @json($leadChart);
+    new ApexCharts(document.getElementById('chart_lead'), {
+        chart: { type: 'area', height: 260, toolbar: { show: false }, animations: { speed: 250 } },
+        colors: ['#7239EA'],
+        series: [{ name: 'Lead WA', data: leadChart.data }],
+        xaxis: {
+            categories: leadChart.labels,
+            labels: { style: { fontSize: '10px', colors: '#7E8299' }, rotate: -45, hideOverlappingLabels: true },
+            axisBorder: { show: false }, axisTicks: { show: false },
+        },
+        yaxis: {
+            labels: { style: { colors: '#7E8299', fontSize: '11px' }, formatter: v => Math.round(v).toLocaleString('id-ID') },
+            min: 0,
+        },
+        stroke: { curve: 'smooth', width: 3 },
+        fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 100] } },
+        dataLabels: { enabled: false },
+        legend: { show: false },
+        grid: { borderColor: '#EFF2F5', strokeDashArray: 4 },
+        tooltip: { y: { formatter: v => Math.round(v).toLocaleString('id-ID') + ' lead' } },
+        markers: { size: 3, hover: { size: 5 } },
+    }).render();
 });
 </script>
 @endpush

@@ -61,8 +61,16 @@ Route::get('/__opcache-reset', function () {
 
 // ===== PORTAL CUSTOMER (PUBLIC — no auth) =====
 // Root domain = portal. Akses bebas, no login.
-Route::get('/',                    [\App\Http\Controllers\Portal\PortalController::class, 'index'])->name('portal.home');
+// Halaman home dipasangi LogPortalVisit supaya pengunjung tercatat.
+Route::get('/',                    [\App\Http\Controllers\Portal\PortalController::class, 'index'])
+    ->middleware(\App\Http\Middleware\LogPortalVisit::class)
+    ->name('portal.home');
 Route::get('/portal/products.json',[\App\Http\Controllers\Portal\PortalController::class, 'productsJson'])->name('portal.products');
+
+// Endpoint anonim untuk catat lead (intent checkout via WA). Tidak butuh CSRF
+// (lihat bootstrap/app.php → validateCsrfTokens.except).
+Route::post('/portal/lead', [\App\Http\Controllers\Portal\PortalAnalyticsController::class, 'recordLead'])
+    ->name('portal.lead');
 
 // Public — link kuitansi untuk customer (signed URL, tanpa login)
 Route::get('/p/so/{salesOrder}/receipt', [SalesOrderController::class, 'publicPrint'])
