@@ -429,12 +429,36 @@ function renderProducts(list) {
   const inCartMap = {};
   cart.forEach(it => inCartMap[it.id] = it.qty);
 
-  grid.innerHTML = list.map(p => {
+  // Pisahkan available vs habis. Habis = stock <= 0.
+  const available = list.filter(p => p.stock > 0);
+  const soldOut   = list.filter(p => !(p.stock > 0));
+
+  const availableHtml = available.map(p => renderProductCard(p, inCartMap[p.id] || 0, false)).join('');
+  const soldOutHtml   = soldOut.map(p => renderProductCard(p, 0, true)).join('');
+
+  // Separator hanya kalau dua-duanya ada — supaya tidak muncul saat 100% available
+  // atau 100% habis. Pakai col-span-full supaya menutupi semua kolom grid.
+  const separatorHtml = (available.length && soldOut.length) ? `
+    <div class="col-span-full flex items-center gap-3 mt-2 mb-1">
+      <div class="flex-1 h-px bg-outline-variant/60"></div>
+      <div class="flex items-center gap-1.5 px-3 py-1 bg-surface-container-low text-on-surface-variant text-xs font-semibold rounded-full border border-outline-variant/40">
+        <span class="material-symbols-outlined" style="font-size:14px;">remove_shopping_cart</span>
+        Stok Habis (${soldOut.length})
+      </div>
+      <div class="flex-1 h-px bg-outline-variant/60"></div>
+    </div>
+  ` : '';
+
+  grid.innerHTML = availableHtml + separatorHtml + soldOutHtml;
+}
+
+// Render 1 card produk. `isSoldOut` = true → muted + tombol pesan diganti
+// label "Stok Habis" yang non-aktif, badge stok diganti badge merah.
+function renderProductCard(p, inCartQty, isSoldOut) {
     const packParts = [];
     if (p.pack_content) packParts.push(p.pack_content);
     if (p.pack_weight)  packParts.push(p.pack_weight);
     const packStr = packParts.length ? packParts.join(' · ') : '';
-    const inCartQty = inCartMap[p.id] || 0;
     const stockBadge = getStockBadge(p.stock, p.uom);
 
     // Image: prefer admin upload → fallback ke default produk asset → fallback ke icon
@@ -446,39 +470,64 @@ function renderProducts(list) {
     `;
 
     // Action button:
-    //   Mobile  → full-width (lebih nyaman di-tap).
-    //   Desktop → compact (icon button / stepper kecil).
-    const actionHtml = inCartQty > 0 ? `
-      <div class="flex items-center gap-0.5 bg-primary-fixed border border-primary/30 rounded-xl p-1 md:p-0.5 w-full md:w-auto">
-        <button onclick="changeQty(${p.id}, -1)" class="h-9 md:h-7 w-9 md:w-7 rounded-lg bg-white text-primary hover:bg-primary hover:text-white active:scale-90 flex items-center justify-center transition-all">
-          <span class="material-symbols-outlined" style="font-size:18px;">remove</span>
+    //   - Sold out → tombol "Stok Habis" non-aktif (cursor-not-allowed).
+    //   - In cart  → stepper qty (mobile full-width, desktop compact).
+    //   - Default  → tombol Pesan.
+    let actionHtml;
+    if (isSoldOut) {
+      actionHtml = `
+        <button disabled aria-disabled="true"
+          class="inline-flex items-center justify-center gap-1.5 w-full md:w-auto md:px-3 h-10 px-3 bg-surface-container text-on-surface-variant rounded-xl cursor-not-allowed opacity-80 border border-outline-variant/40"
+          title="Produk sedang tidak tersedia">
+          <span class="material-symbols-outlined" style="font-size:18px;">do_not_disturb_on</span>
+          <span class="text-sm font-semibold">Stok Habis</span>
         </button>
-        <span class="font-bold flex-1 md:w-7 text-center text-primary text-base md:text-sm">${inCartQty}</span>
-        <button onclick='addToCart(${JSON.stringify(p)})' class="h-9 md:h-7 w-9 md:w-7 rounded-lg bg-primary text-white hover:bg-primary-container active:scale-90 flex items-center justify-center transition-all">
-          <span class="material-symbols-outlined" style="font-size:18px;">add</span>
+      `;
+    } else if (inCartQty > 0) {
+      actionHtml = `
+        <div class="flex items-center gap-0.5 bg-primary-fixed border border-primary/30 rounded-xl p-1 md:p-0.5 w-full md:w-auto">
+          <button onclick="changeQty(${p.id}, -1)" class="h-9 md:h-7 w-9 md:w-7 rounded-lg bg-white text-primary hover:bg-primary hover:text-white active:scale-90 flex items-center justify-center transition-all">
+            <span class="material-symbols-outlined" style="font-size:18px;">remove</span>
+          </button>
+          <span class="font-bold flex-1 md:w-7 text-center text-primary text-base md:text-sm">${inCartQty}</span>
+          <button onclick='addToCart(${JSON.stringify(p)})' class="h-9 md:h-7 w-9 md:w-7 rounded-lg bg-primary text-white hover:bg-primary-container active:scale-90 flex items-center justify-center transition-all">
+            <span class="material-symbols-outlined" style="font-size:18px;">add</span>
+          </button>
+        </div>
+      `;
+    } else {
+      actionHtml = `
+        <button onclick='addToCart(${JSON.stringify(p)})'
+          class="group/btn inline-flex items-center justify-center gap-1.5 w-full md:w-10 h-10 px-3 md:px-0 bg-primary text-white rounded-xl hover:bg-primary-container active:scale-95 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
+          title="Tambah ke pesanan">
+          <span class="material-symbols-outlined group-hover/btn:rotate-12 transition-transform" style="font-size:20px;">add_shopping_cart</span>
+          <span class="text-sm font-semibold md:hidden">Pesan</span>
         </button>
-      </div>
-    ` : `
-      <button onclick='addToCart(${JSON.stringify(p)})'
-        class="group/btn inline-flex items-center justify-center gap-1.5 w-full md:w-10 h-10 px-3 md:px-0 bg-primary text-white rounded-xl hover:bg-primary-container active:scale-95 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
-        title="Tambah ke pesanan">
-        <span class="material-symbols-outlined group-hover/btn:rotate-12 transition-transform" style="font-size:20px;">add_shopping_cart</span>
-        <span class="text-sm font-semibold md:hidden">Pesan</span>
-      </button>
-    `;
+      `;
+    }
+
+    // Outer card styling: sold-out di-mute (opacity-60 + grayscale gambar)
+    // dan tidak punya hover lift effect / cart highlight border.
+    const cardClass = isSoldOut
+      ? 'group fade-in bg-white rounded-3xl overflow-hidden border-2 border-outline-variant/40 opacity-70 grayscale-[35%] transition-all duration-300 flex flex-col relative'
+      : `group fade-in bg-white rounded-3xl overflow-hidden border-2 ${inCartQty > 0 ? 'border-primary shadow-lg shadow-primary/20' : 'border-outline-variant/50'} hover:shadow-xl hover:border-primary/30 hover:-translate-y-1 transition-all duration-300 flex flex-col relative`;
+
+    // Sold-out: tampilkan badge "HABIS" di pojok kiri atas (override badge admin)
+    // supaya jelas. Kalau in-stock: badge admin tetap muncul kalau ada.
+    const topLeftBadge = isSoldOut
+      ? `<span class="px-2.5 py-1 bg-on-surface-variant text-white text-[10px] font-bold uppercase tracking-wide rounded-full shadow-md">Stok Habis</span>`
+      : (p.badge ? (() => {
+          const s = BADGE_STYLES[p.badge.color] || BADGE_STYLES.primary;
+          return `<span class="px-2.5 py-1 ${s.bg} ${s.text} text-[10px] font-bold uppercase tracking-wide rounded-full shadow-md">${p.badge.label}</span>`;
+        })() : '');
 
     return `
-      <div class="group fade-in bg-white rounded-3xl overflow-hidden border-2 ${inCartQty > 0 ? 'border-primary shadow-lg shadow-primary/20' : 'border-outline-variant/50'} hover:shadow-xl hover:border-primary/30 hover:-translate-y-1 transition-all duration-300 flex flex-col relative">
+      <div class="${cardClass}">
 
-        {{-- Top badges (badge admin di kiri + cart counter di kanan) --}}
+        {{-- Top badges (badge admin / HABIS di kiri + cart counter di kanan) --}}
         <div class="absolute top-3 left-3 right-3 z-10 flex items-start justify-between gap-2 pointer-events-none">
-          <div class="flex flex-col items-start gap-1">
-            ${p.badge ? (() => {
-              const s = BADGE_STYLES[p.badge.color] || BADGE_STYLES.primary;
-              return `<span class="px-2.5 py-1 ${s.bg} ${s.text} text-[10px] font-bold uppercase tracking-wide rounded-full shadow-md">${p.badge.label}</span>`;
-            })() : ''}
-          </div>
-          ${inCartQty > 0 ? `<span class="px-2.5 py-1 bg-primary text-white text-[10px] font-bold rounded-full shadow-md flex items-center gap-1"><span class="material-symbols-outlined text-xs">check_circle</span>${inCartQty}</span>` : ''}
+          <div class="flex flex-col items-start gap-1">${topLeftBadge}</div>
+          ${(!isSoldOut && inCartQty > 0) ? `<span class="px-2.5 py-1 bg-primary text-white text-[10px] font-bold rounded-full shadow-md flex items-center gap-1"><span class="material-symbols-outlined text-xs">check_circle</span>${inCartQty}</span>` : ''}
         </div>
 
         {{-- Image with hover zoom --}}
@@ -488,7 +537,7 @@ function renderProducts(list) {
 
         {{-- Body --}}
         <div class="p-4 md:p-5 flex flex-col flex-1">
-          <h3 class="font-bold text-base md:text-lg leading-tight mb-1 line-clamp-2 group-hover:text-primary transition-colors">${p.name}</h3>
+          <h3 class="font-bold text-base md:text-lg leading-tight mb-1 line-clamp-2 ${isSoldOut ? '' : 'group-hover:text-primary transition-colors'}">${p.name}</h3>
           ${packStr ? `<div class="text-xs text-on-surface-variant mb-2 flex items-center gap-1"><span class="material-symbols-outlined text-sm">scale</span>${packStr}</div>` : '<div class="mb-2"></div>'}
 
           {{-- Nutrition tags (kalau ada).
@@ -504,7 +553,7 @@ function renderProducts(list) {
               `).join('')}
               ${p.nutrition_info.length > 2 ? `<span class="text-[10px] font-semibold text-on-surface-variant">+${p.nutrition_info.length - 2}</span>` : ''}
             </div>
-            ${(p.nutrition_info.length > 0) ? `
+            ${(p.nutrition_info.length > 0 && !isSoldOut) ? `
               <button type="button" onclick='openNutritionModal(${JSON.stringify(p)})'
                 class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-primary hover:text-primary-container hover:underline mb-3 transition-colors">
                 <span class="material-symbols-outlined" style="font-size:14px;">info</span>
@@ -519,14 +568,13 @@ function renderProducts(list) {
           <div class="mt-auto pt-3 border-t border-outline-variant/30">
             <div class="text-[10px] text-on-surface-variant font-bold uppercase tracking-wider mb-0.5">Per ${p.uom}</div>
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-3">
-              <div class="text-lg md:text-xl font-bold text-primary leading-tight whitespace-nowrap">${fmtRp(p.price)}</div>
+              <div class="text-lg md:text-xl font-bold ${isSoldOut ? 'text-on-surface-variant' : 'text-primary'} leading-tight whitespace-nowrap">${fmtRp(p.price)}</div>
               <div class="w-full md:w-auto">${actionHtml}</div>
             </div>
           </div>
         </div>
       </div>
     `;
-  }).join('');
 }
 
 function renderCategoryChips() {

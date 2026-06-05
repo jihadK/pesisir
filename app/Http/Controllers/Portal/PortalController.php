@@ -81,7 +81,10 @@ class PortalController extends Controller
                     'nutrition_info' => is_array($p->nutrition_info) ? $p->nutrition_info : [],
                 ];
             })
-            ->filter(fn ($p) => $p['stock'] > 0) // hanya tampilkan yang ada stok
+            // Tampilkan semua produk (termasuk yang stoknya habis). Urut: stok
+            // tersedia dulu, baru yang habis di paling bawah. SKU order dijaga
+            // dalam tiap grup karena sortByDesc Laravel bersifat stable.
+            ->sortByDesc(fn ($p) => $p['stock'] > 0)
             ->values();
 
         return response()
