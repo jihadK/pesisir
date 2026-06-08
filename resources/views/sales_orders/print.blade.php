@@ -274,7 +274,7 @@
                 $lines[] = "{$pm->bank_name} {$pm->account_no}";
                 $lines[] = "a.n. {$pm->account_holder}";
             } else {
-                $lines[] = "Pembayaran: Belum ditentukan";
+                $lines[] = "Pembayaran : Cash on Delivery (COD)";
                 $lines[] = "";
                 if ($qrisViewerUrl) {
                     $lines[] = "Bisa via QRIS — unduh gambarnya di sini: {$qrisViewerUrl}";
