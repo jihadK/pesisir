@@ -3,10 +3,83 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>{{ config('app.name', 'Pesisir Fresh Fish') }} — Booking Order</title>
+
+{{-- ===== SEO META ===== --}}
+@php
+    $seoTitle = $storeMeta['name'] . ' — Ikan Laut Segar dari Pesisir Lamongan';
+    $seoDesc  = $storeMeta['description'];
+    $seoUrl   = $storeMeta['url'];
+    $seoImg   = $storeMeta['logo_url'];
+@endphp
+<title>{{ $seoTitle }}</title>
+<meta name="description" content="{{ $seoDesc }}" />
+<meta name="keywords" content="ikan segar lamongan, jual ikan laut, ikan pesisir, seafood lamongan, booking ikan online, ikan kembung, ikan tuna, cumi segar, kepiting segar" />
+<meta name="robots" content="index, follow, max-image-preview:large" />
+<meta name="author" content="{{ $storeMeta['name'] }}" />
+<link rel="canonical" href="{{ $seoUrl }}" />
+
+{{-- Open Graph (Facebook / WhatsApp / Telegram preview) --}}
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="{{ $storeMeta['name'] }}" />
+<meta property="og:title" content="{{ $seoTitle }}" />
+<meta property="og:description" content="{{ $seoDesc }}" />
+<meta property="og:url" content="{{ $seoUrl }}" />
+<meta property="og:image" content="{{ $seoImg }}" />
+<meta property="og:locale" content="id_ID" />
+
+{{-- Twitter Card --}}
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="{{ $seoTitle }}" />
+<meta name="twitter:description" content="{{ $seoDesc }}" />
+<meta name="twitter:image" content="{{ $seoImg }}" />
+
 <link rel="icon" type="image/png" href="{{ asset('assets/media/logos/logo-pesisir-web.png') }}" />
 <link rel="shortcut icon" href="{{ asset('assets/media/logos/logo-pesisir-web.png') }}" />
 <link rel="apple-touch-icon" href="{{ asset('assets/media/logos/logo-pesisir-web.png') }}" />
+
+{{-- ===== JSON-LD: Organization + LocalBusiness ===== --}}
+<script type="application/ld+json">
+{!! json_encode([
+    '@context' => 'https://schema.org',
+    '@graph'   => [
+        [
+            '@type' => 'Organization',
+            '@id'   => $storeMeta['url'] . '#org',
+            'name'  => $storeMeta['name'],
+            'url'   => $storeMeta['url'],
+            'logo'  => $storeMeta['logo_url'],
+            'description' => $storeMeta['description'],
+        ],
+        [
+            '@type'       => 'LocalBusiness',
+            '@id'         => $storeMeta['url'] . '#business',
+            'name'        => $storeMeta['name'],
+            'url'         => $storeMeta['url'],
+            'image'       => $storeMeta['logo_url'],
+            'description' => $storeMeta['description'],
+            'priceRange'  => 'Rp',
+            'telephone'   => $storeMeta['phone_e164'] ?: null,
+            'address'     => $storeMeta['address'] ? [
+                '@type'           => 'PostalAddress',
+                'streetAddress'   => $storeMeta['address'],
+                'addressLocality' => 'Lamongan',
+                'addressRegion'   => 'Jawa Timur',
+                'addressCountry'  => 'ID',
+            ] : null,
+        ],
+        [
+            '@type' => 'WebSite',
+            'url'   => $storeMeta['url'],
+            'name'  => $storeMeta['name'],
+            'potentialAction' => [
+                '@type'       => 'SearchAction',
+                'target'      => $storeMeta['url'] . '?q={search_term_string}',
+                'query-input' => 'required name=search_term_string',
+            ],
+        ],
+    ],
+], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
+</script>
 <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
@@ -145,10 +218,19 @@ body { font-family: 'Manrope', sans-serif; }
   </div>
 </section>
 
-{{-- ===== PRODUCT GRID ===== --}}
+{{-- ===== PRODUCT GRID =====
+     Server-side rendered untuk SEO. JS akan re-render setelah DOMContentLoaded
+     untuk apply cart state + interaktivitas (stepper, dll).
+--}}
 <section class="px-4 md:px-8 max-w-7xl mx-auto pt-5 md:pt-6">
+  <h2 class="sr-only">Daftar Produk Ikan & Seafood Segar</h2>
   <div id="product-grid" class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
-    {{-- Loading skeletons --}}
+    @forelse($products as $p)
+        @include('portal._product_card_ssr', ['p' => $p])
+    @empty
+    @endforelse
+
+    {{-- Loading skeletons (dipakai JS saat filter berat) --}}
     <template id="skeleton-tpl">
       <div class="bg-surface-container-low rounded-3xl p-4 animate-pulse">
         <div class="h-40 bg-surface-container rounded-2xl mb-3"></div>
@@ -157,11 +239,45 @@ body { font-family: 'Manrope', sans-serif; }
       </div>
     </template>
   </div>
-  <div id="empty-state" class="hidden text-center py-20">
+  <div id="empty-state" class="{{ $products->isEmpty() ? '' : 'hidden' }} text-center py-20">
     <span class="material-symbols-outlined text-on-surface-variant" style="font-size:64px;">set_meal</span>
     <p class="text-on-surface-variant mt-2">Belum ada produk tersedia saat ini.</p>
   </div>
 </section>
+
+{{-- ===== JSON-LD: ItemList of Products (untuk Google rich result) =====
+     Dibatasi 30 item supaya ukuran HTML tetap terkontrol; ranking sudah cukup
+     terangkat dari sini + structured offers per produk di card SSR di atas.
+--}}
+<script type="application/ld+json">
+{!! json_encode([
+    '@context' => 'https://schema.org',
+    '@type'    => 'ItemList',
+    'name'     => 'Daftar Produk ' . $storeMeta['name'],
+    'itemListElement' => $products->take(30)->values()->map(fn ($p, $i) => [
+        '@type'    => 'ListItem',
+        'position' => $i + 1,
+        'item'     => [
+            '@type'       => 'Product',
+            'name'        => $p['name'],
+            'sku'         => $p['sku'],
+            'category'    => $p['parent_cat'],
+            'image'       => $p['image_url'],
+            'description' => trim(($p['pack_content'] ?? '') . ' ' . ($p['pack_weight'] ?? '')),
+            'brand'       => ['@type' => 'Brand', 'name' => $storeMeta['name']],
+            'offers'      => [
+                '@type'         => 'Offer',
+                'priceCurrency' => 'IDR',
+                'price'         => (int) $p['price'],
+                'availability'  => $p['stock'] > 0
+                    ? 'https://schema.org/InStock'
+                    : 'https://schema.org/OutOfStock',
+                'url'           => $storeMeta['url'],
+            ],
+        ],
+    ])->all(),
+], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
+</script>
 
 {{-- ===== FLOATING CART BUTTON ===== --}}
 <button id="cart-fab" onclick="openCart()"
@@ -224,7 +340,8 @@ body { font-family: 'Manrope', sans-serif; }
 const STORAGE_KEY = 'pesisir_cart_v1';
 const PRODUCTS_URL = "{{ route('portal.products') }}";
 let ADMIN_WA = "{{ config('app.portal_admin_wa', '') }}";
-let ALL_PRODUCTS = [];
+// Pre-populate dari server-side render (sudah di-pass via blade).
+let ALL_PRODUCTS = @json($products->all());
 let activeCategory = 'all';
 let searchTerm = '';
 
@@ -638,24 +755,30 @@ function showSkeletons() {
 }
 
 // ===== INIT =====
-async function loadProducts() {
-  showSkeletons();
+// Data produk sudah ada (SSR + ALL_PRODUCTS dari server). Fetch JSON tetap
+// dilakukan di background untuk dapatkan stok terkini (kalau ada perubahan
+// di sisi admin). Dipanggil non-blocking.
+async function refreshProducts() {
   try {
-    // Cache busting: tambah timestamp supaya browser/CDN tidak serve response lama
     const res = await fetch(`${PRODUCTS_URL}?_=${Date.now()}`, { cache: 'no-store' });
     const data = await res.json();
-    ALL_PRODUCTS = data.products || [];
+    if (Array.isArray(data.products)) ALL_PRODUCTS = data.products;
     if (data.admin_wa) ADMIN_WA = data.admin_wa;
     renderCategoryChips();
-    renderProducts(ALL_PRODUCTS);
+    renderProducts(getFilteredList());
   } catch (e) {
-    document.getElementById('product-grid').innerHTML = '<div class="col-span-full text-center py-12 text-error">Gagal memuat produk. Refresh halaman.</div>';
+    // Diam saja — SSR markup tetap visible.
   }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   updateCartUI();
-  loadProducts();
+  // Apply cart state ke card yang sudah di-render server. Setelah ini, semua
+  // interaksi (filter, search, +/-) jalan via JS dengan card interaktif.
+  renderCategoryChips();
+  renderProducts(getFilteredList());
+  // Background refresh data produk supaya stok up-to-date kalau page lama dibuka.
+  refreshProducts();
   // Search input handler dengan debounce ringan
   let searchTimer;
   document.getElementById('search-input').addEventListener('input', (e) => {

@@ -67,6 +67,12 @@ Route::get('/',                    [\App\Http\Controllers\Portal\PortalControlle
     ->name('portal.home');
 Route::get('/portal/products.json',[\App\Http\Controllers\Portal\PortalController::class, 'productsJson'])->name('portal.products');
 
+// SEO: robots.txt & sitemap.xml dilayani Laravel (URL absolut auto sesuai domain).
+Route::get('/robots.txt', [\App\Http\Controllers\Portal\PortalController::class, 'robots'])
+    ->name('portal.robots');
+Route::get('/sitemap.xml', [\App\Http\Controllers\Portal\PortalController::class, 'sitemap'])
+    ->name('portal.sitemap');
+
 // Endpoint anonim untuk catat lead (intent checkout via WA). Tidak butuh CSRF
 // (lihat bootstrap/app.php → validateCsrfTokens.except).
 Route::post('/portal/lead', [\App\Http\Controllers\Portal\PortalAnalyticsController::class, 'recordLead'])
