@@ -15,9 +15,16 @@ class PortalController extends Controller
 {
     public function index(): View
     {
+        $products  = $this->buildProductList();
+        $storeMeta = $this->storeMeta();
+
         return view('portal.home', [
-            'products'  => $this->buildProductList(),
-            'storeMeta' => $this->storeMeta(),
+            'products'         => $products,
+            'storeMeta'        => $storeMeta,
+            // JSON-LD di-build di controller (PHP murni) supaya Blade tidak
+            // menafsirkan kunci '@context' / '@graph' sebagai directive.
+            'jsonLdOrg'        => $this->buildOrgJsonLd($storeMeta),
+            'jsonLdItemList'   => $this->buildItemListJsonLd($products, $storeMeta),
         ]);
     }
 
@@ -159,6 +166,115 @@ TXT;
     }
 
     /**
+     * Bangun JSON-LD Organization + LocalBusiness + WebSite untuk SEO.
+     * Di-build di PHP murni (bukan Blade) supaya kunci '@context' tidak
+     * tertukar dengan directive Blade @context (Laravel 11+).
+     */
+    private function buildOrgJsonLd(array $s): string
+    {
+        $orgKey  = '@' . 'context';
+        $typeKey = '@' . 'type';
+        $idKey   = '@' . 'id';
+        $graph   = '@' . 'graph';
+
+        $business = [
+            $typeKey      => 'LocalBusiness',
+            $idKey        => $s['url'] . '#business',
+            'name'        => $s['name'],
+            'url'         => $s['url'],
+            'image'       => $s['logo_url'],
+            'description' => $s['description'],
+            'priceRange'  => 'Rp',
+        ];
+        if ($s['phone_e164']) $business['telephone'] = $s['phone_e164'];
+        if ($s['address']) {
+            $business['address'] = [
+                $typeKey          => 'PostalAddress',
+                'streetAddress'   => $s['address'],
+                'addressLocality' => 'Lamongan',
+                'addressRegion'   => 'Jawa Timur',
+                'addressCountry'  => 'ID',
+            ];
+        }
+        if ($s['lat'] !== null && $s['lng'] !== null) {
+            $business['geo'] = [
+                $typeKey     => 'GeoCoordinates',
+                'latitude'   => $s['lat'],
+                'longitude'  => $s['lng'],
+            ];
+        }
+        if ($s['maps_url']) $business['hasMap'] = $s['maps_url'];
+
+        $payload = [
+            $orgKey => 'https://schema.org',
+            $graph  => [
+                [
+                    $typeKey      => 'Organization',
+                    $idKey        => $s['url'] . '#org',
+                    'name'        => $s['name'],
+                    'url'         => $s['url'],
+                    'logo'        => $s['logo_url'],
+                    'description' => $s['description'],
+                ],
+                $business,
+                [
+                    $typeKey => 'WebSite',
+                    'url'    => $s['url'],
+                    'name'   => $s['name'],
+                    'potentialAction' => [
+                        $typeKey      => 'SearchAction',
+                        'target'      => $s['url'] . '?q={search_term_string}',
+                        'query-input' => 'required name=search_term_string',
+                    ],
+                ],
+            ],
+        ];
+
+        return json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
+     * Bangun JSON-LD ItemList Product (max 30) untuk Google rich result.
+     */
+    private function buildItemListJsonLd(Collection $products, array $s): string
+    {
+        $ctxKey  = '@' . 'context';
+        $typeKey = '@' . 'type';
+
+        $items = $products->take(30)->values()->map(function ($p, $i) use ($typeKey, $s) {
+            return [
+                $typeKey   => 'ListItem',
+                'position' => $i + 1,
+                'item'     => [
+                    $typeKey      => 'Product',
+                    'name'        => $p['name'],
+                    'sku'         => $p['sku'],
+                    'category'    => $p['parent_cat'],
+                    'image'       => $p['image_url'],
+                    'description' => trim(($p['pack_content'] ?? '') . ' ' . ($p['pack_weight'] ?? '')),
+                    'brand'       => [$typeKey => 'Brand', 'name' => $s['name']],
+                    'offers'      => [
+                        $typeKey        => 'Offer',
+                        'priceCurrency' => 'IDR',
+                        'price'         => (int) $p['price'],
+                        'availability'  => $p['stock'] > 0
+                            ? 'https://schema.org/InStock'
+                            : 'https://schema.org/OutOfStock',
+                        'url'           => $s['url'],
+                    ],
+                ],
+            ];
+        })->all();
+
+        return json_encode([
+            $ctxKey           => 'https://schema.org',
+            $typeKey          => 'ItemList',
+            'name'            => 'Daftar Produk ' . $s['name'],
+            'itemListElement' => $items,
+        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
      * Info toko untuk meta SEO + structured data + footer.
      * Alamat diambil dari warehouse WH-LAMONGAN, telepon dari .env (STORE_PHONE).
      */
@@ -183,11 +299,22 @@ TXT;
 
         $address = Warehouse::where('code', 'WH-LAMONGAN')->value('address') ?: '';
 
+        $lat = config('app.store_lat');
+        $lng = config('app.store_lng');
+        // Google Maps URL: pin presisi pakai koordinat kalau ada, fallback ke
+        // text search alamat. ?api=1&query=lat,lng = pin tepat di titik.
+        $mapsUrl = ($lat !== null && $lng !== null)
+            ? "https://www.google.com/maps/search/?api=1&query={$lat},{$lng}"
+            : ($address ? 'https://www.google.com/maps/search/?api=1&query=' . urlencode($address) : null);
+
         return [
             'name'          => config('app.name', 'Pesisir Fresh Fish'),
             'tagline'       => 'Ikan Segar dari Laut Pesisir',
             'description'   => 'Jual ikan laut segar berkualitas dari pesisir Lamongan. Booking langsung via WhatsApp — berbagai jenis ikan, cumi, kepiting, dan seafood retail dengan harga transparan.',
             'address'       => $address,
+            'lat'           => $lat !== null ? (float) $lat : null,
+            'lng'           => $lng !== null ? (float) $lng : null,
+            'maps_url'      => $mapsUrl,
             'phone_display' => $phoneDisplay,
             'phone_e164'    => $phoneE164,
             'admin_wa'      => (string) config('app.portal_admin_wa', ''),

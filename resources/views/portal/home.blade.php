@@ -6,7 +6,7 @@
 
 {{-- ===== SEO META ===== --}}
 @php
-    $seoTitle = $storeMeta['name'] . ' — Ikan Laut Segar dari Pesisir Lamongan';
+    $seoTitle = $storeMeta['name'] . ' — Jual Ikan Laut Segar dari Pesisir Lamongan';
     $seoDesc  = $storeMeta['description'];
     $seoUrl   = $storeMeta['url'];
     $seoImg   = $storeMeta['logo_url'];
@@ -37,49 +37,11 @@
 <link rel="shortcut icon" href="{{ asset('assets/media/logos/logo-pesisir-web.png') }}" />
 <link rel="apple-touch-icon" href="{{ asset('assets/media/logos/logo-pesisir-web.png') }}" />
 
-{{-- ===== JSON-LD: Organization + LocalBusiness ===== --}}
-<script type="application/ld+json">
-{!! json_encode([
-    '@context' => 'https://schema.org',
-    '@graph'   => [
-        [
-            '@type' => 'Organization',
-            '@id'   => $storeMeta['url'] . '#org',
-            'name'  => $storeMeta['name'],
-            'url'   => $storeMeta['url'],
-            'logo'  => $storeMeta['logo_url'],
-            'description' => $storeMeta['description'],
-        ],
-        [
-            '@type'       => 'LocalBusiness',
-            '@id'         => $storeMeta['url'] . '#business',
-            'name'        => $storeMeta['name'],
-            'url'         => $storeMeta['url'],
-            'image'       => $storeMeta['logo_url'],
-            'description' => $storeMeta['description'],
-            'priceRange'  => 'Rp',
-            'telephone'   => $storeMeta['phone_e164'] ?: null,
-            'address'     => $storeMeta['address'] ? [
-                '@type'           => 'PostalAddress',
-                'streetAddress'   => $storeMeta['address'],
-                'addressLocality' => 'Lamongan',
-                'addressRegion'   => 'Jawa Timur',
-                'addressCountry'  => 'ID',
-            ] : null,
-        ],
-        [
-            '@type' => 'WebSite',
-            'url'   => $storeMeta['url'],
-            'name'  => $storeMeta['name'],
-            'potentialAction' => [
-                '@type'       => 'SearchAction',
-                'target'      => $storeMeta['url'] . '?q={search_term_string}',
-                'query-input' => 'required name=search_term_string',
-            ],
-        ],
-    ],
-], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
-</script>
+{{-- ===== JSON-LD: Organization + LocalBusiness + WebSite =====
+     Di-build di controller (PHP murni) — Blade sekarang tidak akan menyentuh
+     '@context' / '@graph' / '@type' karena yang di sini sudah string JSON jadi.
+--}}
+<script type="application/ld+json">{!! $jsonLdOrg !!}</script>
 <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
@@ -143,7 +105,7 @@ body { font-family: 'Manrope', sans-serif; }
     </div>
     <div class="relative z-10 max-w-2xl">
       <span class="inline-block px-3 py-1 bg-secondary-container text-on-secondary-container rounded-full text-xs font-bold mb-4">FRESH FROM THE DOCK</span>
-      <h2 class="text-2xl md:text-4xl font-bold text-on-primary-fixed leading-tight mb-3">Ikan Laut Segar, Langsung dari Nelayan</h2>
+      <h2 class="text-2xl md:text-4xl font-bold text-on-primary-fixed leading-tight mb-3">Jual Ikan Laut Segar, Langsung dari Nelayan</h2>
       <p class="text-on-primary-fixed text-sm md:text-base opacity-80 max-w-md mb-5">Pilih produk segar, tambah ke keranjang, lalu booking via WhatsApp.</p>
 
       {{-- Social media — glassmorphism floating buttons --}}
@@ -178,6 +140,21 @@ body { font-family: 'Manrope', sans-serif; }
             @endif
           @endforeach
         </div>
+      @endif
+
+      {{-- Lokasi toko — klik untuk buka Google Maps (pin presisi via koordinat) --}}
+      @if(!empty($storeMeta['address']) && !empty($storeMeta['maps_url']))
+        <a href="{{ $storeMeta['maps_url'] }}"
+           target="_blank" rel="noopener noreferrer"
+           title="Lihat lokasi di Google Maps"
+           class="group inline-flex items-start gap-2 max-w-md mt-5 px-4 py-2.5 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 text-on-primary-fixed hover:bg-white/30 hover:border-white/50 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-300">
+          <span class="material-symbols-outlined flex-shrink-0 mt-0.5" style="font-size:20px;">location_on</span>
+          <span class="flex-1 leading-snug">
+            <span class="block text-[10px] md:text-xs font-bold uppercase tracking-wider opacity-80">Lokasi Toko</span>
+            <span class="block text-xs md:text-sm font-semibold">{{ $storeMeta['address'] }}</span>
+          </span>
+          <span class="material-symbols-outlined flex-shrink-0 mt-0.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" style="font-size:18px;">open_in_new</span>
+        </a>
       @endif
     </div>
   </div>
@@ -245,39 +222,8 @@ body { font-family: 'Manrope', sans-serif; }
   </div>
 </section>
 
-{{-- ===== JSON-LD: ItemList of Products (untuk Google rich result) =====
-     Dibatasi 30 item supaya ukuran HTML tetap terkontrol; ranking sudah cukup
-     terangkat dari sini + structured offers per produk di card SSR di atas.
---}}
-<script type="application/ld+json">
-{!! json_encode([
-    '@context' => 'https://schema.org',
-    '@type'    => 'ItemList',
-    'name'     => 'Daftar Produk ' . $storeMeta['name'],
-    'itemListElement' => $products->take(30)->values()->map(fn ($p, $i) => [
-        '@type'    => 'ListItem',
-        'position' => $i + 1,
-        'item'     => [
-            '@type'       => 'Product',
-            'name'        => $p['name'],
-            'sku'         => $p['sku'],
-            'category'    => $p['parent_cat'],
-            'image'       => $p['image_url'],
-            'description' => trim(($p['pack_content'] ?? '') . ' ' . ($p['pack_weight'] ?? '')),
-            'brand'       => ['@type' => 'Brand', 'name' => $storeMeta['name']],
-            'offers'      => [
-                '@type'         => 'Offer',
-                'priceCurrency' => 'IDR',
-                'price'         => (int) $p['price'],
-                'availability'  => $p['stock'] > 0
-                    ? 'https://schema.org/InStock'
-                    : 'https://schema.org/OutOfStock',
-                'url'           => $storeMeta['url'],
-            ],
-        ],
-    ])->all(),
-], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
-</script>
+{{-- ===== JSON-LD: ItemList of Products (max 30) — dibangun di controller --}}
+<script type="application/ld+json">{!! $jsonLdItemList !!}</script>
 
 {{-- ===== FLOATING CART BUTTON ===== --}}
 <button id="cart-fab" onclick="openCart()"

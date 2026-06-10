@@ -29,6 +29,13 @@ return [
     'store_phone' => env('STORE_PHONE', env('PORTAL_ADMIN_WA', '')),
 
     /*
+    | Koordinat lokasi toko (decimal degrees). Dipakai untuk pin presisi di
+    | Google Maps + geo schema (LocalBusiness JSON-LD). Default = WH-LAMONGAN.
+    */
+    'store_lat' => env('STORE_LAT', -7.123056),
+    'store_lng' => env('STORE_LNG', 112.380591),
+
+    /*
     | Link sosial media untuk customer portal (banner hero).
     | Kosongkan kalau tidak ingin ditampilkan.
     */
